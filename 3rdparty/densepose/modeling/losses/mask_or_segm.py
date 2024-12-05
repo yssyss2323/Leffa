@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 
 from typing import Any, List
+
 import torch
 
 from detectron2.config import CfgNode
@@ -25,7 +26,9 @@ class MaskOrSegmentationLoss:
         Args:
             cfg (CfgNode): configuration options
         """
-        self.segm_trained_by_masks = cfg.MODEL.ROI_DENSEPOSE_HEAD.COARSE_SEGM_TRAINED_BY_MASKS
+        self.segm_trained_by_masks = (
+            cfg.MODEL.ROI_DENSEPOSE_HEAD.COARSE_SEGM_TRAINED_BY_MASKS
+        )
         if self.segm_trained_by_masks:
             self.mask_loss = MaskLoss()
         self.segm_loss = SegmentationLoss(cfg)
@@ -53,7 +56,9 @@ class MaskOrSegmentationLoss:
         """
         if self.segm_trained_by_masks:
             return self.mask_loss(proposals_with_gt, densepose_predictor_outputs)
-        return self.segm_loss(proposals_with_gt, densepose_predictor_outputs, packed_annotations)
+        return self.segm_loss(
+            proposals_with_gt, densepose_predictor_outputs, packed_annotations
+        )
 
     def fake_value(self, densepose_predictor_outputs: Any) -> torch.Tensor:
         """

@@ -7,6 +7,7 @@ from densepose.vis.densepose_results import (
 from densepose.vis.extractor import DensePoseResultExtractor
 from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
+from PIL import Image
 
 
 class DensePosePredictor(object):
@@ -24,6 +25,8 @@ class DensePosePredictor(object):
         self.visualizer = Visualizer()
 
     def predict(self, image):
+        if isinstance(image, str):
+            image = cv2.imread(image)
         with torch.no_grad():
             outputs = self.predictor(image)["instances"]
         outputs = self.extractor(outputs)
@@ -69,5 +72,5 @@ if __name__ == "__main__":
     predictor = DensePosePredictor()
     image_iuv = predictor.predict_iuv(image)
     image_seg = predictor.predict_seg(image)
-    cv2.imwrite("./output_iuv.png", image_iuv)
-    cv2.imwrite("./output_seg.png", image_seg)
+    cv2.imwrite(image_path.split(".")[0] + "_iuv.jpg", image_iuv)
+    cv2.imwrite(image_path.split(".")[0] + "_seg.jpg", image_seg)
