@@ -411,9 +411,13 @@ if __name__ == "__main__":
 
     image_path = sys.argv[1]
     image = Image.open(image_path).convert("RGB")
-    mask = automasker(
+    outputs = automasker(
         image,
         "upper",
         # "lower",
-    )["mask"]
+    )
+    mask = outputs["mask"]
+    # densepose = outputs["densepose"]  # densepose I map, range 0~24
+    # schp_lip = outputs["schp_lip"]
+    # schp_atr = outputs["schp_atr"]
     mask.save(image_path.split(".")[0] + "_mask.jpg")

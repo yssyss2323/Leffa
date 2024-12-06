@@ -1,0 +1,9 @@
+## Starter configuration to be ran locally for testing purpose.
+
+defaults:
+  - train
+  - _self_
+
+trainer:
+  resume_from_last_ckpt: false
+  model_entity_id: null

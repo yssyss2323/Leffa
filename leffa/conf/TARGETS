@@ -1,0 +1,17 @@
+load("//gen_ai/genie/components:macros.bzl", "genie_hydra_config_bundle")
+
+oncall("genads_infra")
+
+# All configs including dataloading, torchtnt, and profiling.
+# Note you need all dependencies for hydra instantiation here.
+genie_hydra_config_bundle(
+    name = "idm_vton_hydra_configs",
+    srcs = glob(["**/*.yaml"]),
+    deps = [
+        "//caffe2:torch",
+        "//genads/common/data:transforms",
+        "//genads/idm_vton:idm_vton_lib",
+        "//media_dataloader/api:api",
+        "//torchmultimodal/fb/genai/transforms:transforms",
+    ],
+)

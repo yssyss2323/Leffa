@@ -1,0 +1,54 @@
+viton_hd_test:
+  dataset:
+    _target_: media_dataloader.api.EnrichingDataset
+    datasource:
+      _target_: media_dataloader.api.LazyHiveDataSource
+      namespace: ad_metrics
+      table: vton_public_dataset_viton_hd_test_paired_v2
+      partition_filter_predicate_list: ["ds = '2024-10-30'"]
+      # table: vton_public_dataset_viton_hd_test_unpaired_v1
+      # partition_filter_predicate_list: ["ds = '2024-09-12'"]
+    enrichments:
+      - _target_: media_dataloader.api.media_lookups.ManifoldLookups
+        lookup_handle_to_media_columns:
+          image_manifold_path: "image"
+          cloth_manifold_path: "cloth"
+          agnostic_mask_manifold_path: "agnostic_mask"
+          image_densepose_manifold_path: "image_densepose"
+          cloth_mask_manifold_path: "cloth_mask"
+          image_parse_v3_manifold_path: "image_parse"
+    collate_fn:
+      - _target_: media_dataloader.api.Collate
+      - _target_: torchmultimodal.fb.genai.transforms.hive_transforms.EverstoreImageToPILTransform
+        image_field: image
+        blob_field: image
+      - _target_: torchmultimodal.fb.genai.transforms.hive_transforms.EverstoreImageToPILTransform
+        image_field: cloth
+        blob_field: cloth
+      - _target_: torchmultimodal.fb.genai.transforms.hive_transforms.EverstoreImageToPILTransform
+        image_field: agnostic_mask
+        blob_field: agnostic_mask
+      - _target_: torchmultimodal.fb.genai.transforms.hive_transforms.EverstoreImageToPILTransform
+        image_field: image_densepose
+        blob_field: image_densepose
+      - _target_: torchmultimodal.fb.genai.transforms.hive_transforms.EverstoreImageToPILTransform
+        image_field: cloth_mask
+        blob_field: cloth_mask
+      - _target_: torchmultimodal.fb.genai.transforms.hive_transforms.EverstoreImageToPILTransform
+        image_field: image_parse
+        blob_field: image_parse
+      - _target_: leffa.datasets.transform.VtonTransform
+        height: ${constants.height}
+        width: ${constants.width}
+        is_train: false
+        dataset: viton_hd
+
+  dataloader:
+    _target_: media_dataloader.api.StatefulDataLoader
+    dataset: ${datasets.viton_hd_test.dataset}
+    batch_size: ${constants.batch_size}
+    num_workers: 0
+    prefetch_factor: null
+    pin_memory: true
+    persistent_workers: false
+    multiprocessing_context: null

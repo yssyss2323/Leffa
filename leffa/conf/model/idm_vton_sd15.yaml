@@ -1,0 +1,16 @@
+_target_: leffa.models.idm_vton_model.IdmVtonModel
+pretrained_model_name_or_path: manifold://genads_models/tree/zijianzhou/model/stable-diffusion-inpainting
+pretrained_vae_name_or_path: manifold://genads_models/tree/zijianzhou/model/sd-vae-ft-mse
+pretrained_garmentnet_path: manifold://genads_models/tree/zijianzhou/model/stable-diffusion-inpainting
+new_in_channels: 13
+height: ${constants.height}
+width: ${constants.width}
+garment_dropout_ratio: 0.1
+use_dream: false
+dream_detail_preservation: 10.0
+skip_cross_attention: true
+skip_cross_attention_garmentnet: true
+copy_unet_to_unet_encoder: false
+only_optimize_unet_attn1: false
+optimize_unet: true
+optimize_unet_encoder: true

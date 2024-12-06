@@ -1,0 +1,47 @@
+deepfashion_train:
+  dataset:
+    _target_: media_dataloader.api.EnrichingDataset
+    datasource:
+      _target_: media_dataloader.api.LazyHiveDataSource
+      namespace: mgenai
+      table: deepfashion_pose_transfer
+      partition_filter_predicate_list: ["ds = '2024-08-15' AND set_name = 'train'"]
+    enrichments:
+      - _target_: media_dataloader.api.media_lookups.ManifoldLookups
+        lookup_handle_to_media_columns:
+          to_img_manifold_path: "image"
+          from_img_manifold_path: "cloth"
+          to_img_iuv_manifold_path: "image_densepose"
+          from_img_iuv_manifold_path: "cloth_densepose"
+    collate_fn:
+      - _target_: media_dataloader.api.Collate
+      - _target_: torchmultimodal.fb.genai.transforms.hive_transforms.EverstoreImageToPILTransform
+        image_field: image
+        blob_field: image
+      - _target_: torchmultimodal.fb.genai.transforms.hive_transforms.EverstoreImageToPILTransform
+        image_field: cloth
+        blob_field: cloth
+      - _target_: torchmultimodal.fb.genai.transforms.hive_transforms.EverstoreImageToPILTransform
+        image_field: image_densepose
+        blob_field: image_densepose
+      - _target_: torchmultimodal.fb.genai.transforms.hive_transforms.EverstoreImageToPILTransform
+        image_field: cloth_densepose
+        blob_field: cloth_densepose
+      - _target_: leffa.datasets.transform.VtonTransform
+        height: ${constants.height}
+        width: ${constants.width}
+        is_train: true
+        dataset: deepfashion
+        aug_garment_ratio: 0.0
+        get_garment_from_person_ratio: 0.0
+        aug_mask_ratio: 0.0
+
+  dataloader:
+    _target_: media_dataloader.api.StatefulDataLoader
+    dataset: ${datasets.deepfashion_train.dataset}
+    batch_size: ${constants.batch_size}
+    num_workers: 4
+    prefetch_factor: 2
+    pin_memory: true
+    persistent_workers: true
+    multiprocessing_context: forkserver
