@@ -1,13 +1,8 @@
-import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 import numpy as np
 import torch
 import torch.nn as nn
-from leffa.models.cat_vton_pipeline import CatVtonPipeline
-from leffa.models.idm_vton_pipeline import (
-    StableDiffusionXLInpaintPipeline as IdmVtonPipeline,
-)
 from leffa.models.simple_vton_pipeline import SimpleVtonPipeline
 
 
@@ -17,7 +12,7 @@ def pil_to_tensor(images):
     return images
 
 
-class SimpleVtonInference(object):
+class LeffaInference(object):
     def __init__(
         self,
         model: nn.Module,
@@ -56,7 +51,6 @@ class SimpleVtonInference(object):
             num_inference_steps=num_inference_steps,
             guidance_scale=guidance_scale,
             generator=generator,
-            warped_mask=data["warped_mask"],
         )[0]
 
         images = [pil_to_tensor(image) for image in images]

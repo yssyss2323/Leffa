@@ -1,15 +1,12 @@
 import inspect
-import os
 from typing import Any, Dict, Union
 
-import cv2
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision
 import tqdm
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageFilter
 
 
 class SimpleVtonPipeline:

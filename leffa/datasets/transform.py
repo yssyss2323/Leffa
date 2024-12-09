@@ -1,19 +1,13 @@
-from __future__ import annotations
-
 import logging
 
-import random
 from typing import Any, Dict
 
 import cv2
-import imgaug.augmenters as iaa
 import numpy as np
 import torch
 from diffusers.image_processor import VaeImageProcessor
-from imgaug.augmentables.segmaps import SegmentationMapsOnImage
 from PIL import Image
 from torch import nn
-from torchvision import transforms
 from transformers import CLIPImageProcessor
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -60,7 +54,8 @@ class VtonTransform(nn.Module):
 
             for key in mask_data_keys:
                 batch[key] = [
-                    Image.new("RGB", (self.width, self.height), (255, 255, 255))
+                    Image.new("RGB", (self.width, self.height),
+                              (255, 255, 255))
                     for _ in range(batch_size)
                 ]
 
@@ -86,11 +81,15 @@ class VtonTransform(nn.Module):
                 cloth_densepose = batch["cloth_densepose"][i]
 
             # 3. process data
-            image = self.vae_processor.preprocess(image, self.height, self.width)[0]
-            cloth = self.vae_processor.preprocess(cloth, self.height, self.width)[0]
-            mask = self.mask_processor.preprocess(mask, self.height, self.width)[0]
+            image = self.vae_processor.preprocess(
+                image, self.height, self.width)[0]
+            cloth = self.vae_processor.preprocess(
+                cloth, self.height, self.width)[0]
+            mask = self.mask_processor.preprocess(
+                mask, self.height, self.width)[0]
             if self.dataset in ["pose_transfer", "deepfashion"]:
-                densepose = densepose.resize((self.width, self.height), Image.NEAREST)
+                densepose = densepose.resize(
+                    (self.width, self.height), Image.NEAREST)
                 cloth_densepose = cloth_densepose.resize(
                     (self.width, self.height), Image.NEAREST
                 )
@@ -151,7 +150,8 @@ class VtonTransform(nn.Module):
             elif isinstance(image, list) and isinstance(image[0], np.ndarray):
                 image = np.concatenate([i[None, :] for i in image], axis=0)
             image = image.transpose(0, 3, 1, 2)
-            image = torch.from_numpy(image).to(dtype=torch.float32) / 127.5 - 1.0
+            image = torch.from_numpy(image).to(
+                dtype=torch.float32) / 127.5 - 1.0
         return image
 
     @staticmethod
@@ -210,15 +210,18 @@ class VtonTransform(nn.Module):
             if isinstance(densepose, list) and isinstance(
                 densepose[0], PIL.Image.Image
             ):
-                densepose = [np.array(i.convert("RGB"))[None, :] for i in densepose]
+                densepose = [np.array(i.convert("RGB"))[None, :]
+                             for i in densepose]
                 densepose = np.concatenate(densepose, axis=0)
             elif isinstance(densepose, list) and isinstance(densepose[0], np.ndarray):
-                densepose = np.concatenate([i[None, :] for i in densepose], axis=0)
+                densepose = np.concatenate(
+                    [i[None, :] for i in densepose], axis=0)
             densepose = densepose.transpose(0, 3, 1, 2)
             densepose = densepose.astype(np.float32)
             densepose[:, 0:2, :, :] /= 255.0
             densepose[:, 2:3, :, :] /= 24.0
-            densepose = torch.from_numpy(densepose).to(dtype=torch.float32) * 2.0 - 1.0
+            densepose = torch.from_numpy(densepose).to(
+                dtype=torch.float32) * 2.0 - 1.0
         return densepose
 
 

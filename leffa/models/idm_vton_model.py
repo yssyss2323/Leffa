@@ -11,10 +11,10 @@ from diffusers.image_processor import VaeImageProcessor
 
 from diffusers.training_utils import compute_snr
 from leffa.models.cat_vton_model import add_skip_cross_attention
-from leffa.models.diffusion_model.unet_hacked_garment import (
+from leffa.models.diffusion_model.unet_ref import (
     UNet2DConditionModel as UNet2DConditionModel_ref,
 )
-from leffa.models.diffusion_model.unet_hacked_tryon import (
+from leffa.models.diffusion_model.unet_gen import (
     UNet2DConditionModel as UNet2DConditionModel_tryon,
 )
 from leffa.models.ip_adapter.ip_adapter import Resampler

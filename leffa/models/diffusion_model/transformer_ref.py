@@ -27,9 +27,7 @@ from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear
 from diffusers.models.modeling_utils import ModelMixin
 from diffusers.models.normalization import AdaLayerNormSingle
 from diffusers.utils import BaseOutput, deprecate, is_torch_version, USE_PEFT_BACKEND
-from leffa.models.diffusion_model.attentionhacked_garment import (
-    BasicTransformerBlock,
-)
+from leffa.models.diffusion_model.attention_ref import BasicTransformerBlock
 from torch import nn
 
 
@@ -115,7 +113,8 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
 
         # 1. Transformer2DModel can process both standard continuous images of shape `(batch_size, num_channels, width, height)` as well as quantized image embeddings of shape `(batch_size, num_image_vectors)`
         # Define whether input is continuous or discrete depending on configuration
-        self.is_input_continuous = (in_channels is not None) and (patch_size is None)
+        self.is_input_continuous = (
+            in_channels is not None) and (patch_size is None)
         self.is_input_vectorized = num_vector_embeds is not None
         self.is_input_patches = in_channels is not None and patch_size is not None
 
@@ -249,13 +248,15 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
             self.norm_out = nn.LayerNorm(inner_dim)
             self.out = nn.Linear(inner_dim, self.num_vector_embeds - 1)
         elif self.is_input_patches and norm_type != "ada_norm_single":
-            self.norm_out = nn.LayerNorm(inner_dim, elementwise_affine=False, eps=1e-6)
+            self.norm_out = nn.LayerNorm(
+                inner_dim, elementwise_affine=False, eps=1e-6)
             self.proj_out_1 = nn.Linear(inner_dim, 2 * inner_dim)
             self.proj_out_2 = nn.Linear(
                 inner_dim, patch_size * patch_size * self.out_channels
             )
         elif self.is_input_patches and norm_type == "ada_norm_single":
-            self.norm_out = nn.LayerNorm(inner_dim, elementwise_affine=False, eps=1e-6)
+            self.norm_out = nn.LayerNorm(
+                inner_dim, elementwise_affine=False, eps=1e-6)
             self.scale_shift_table = nn.Parameter(
                 torch.randn(2, inner_dim) / inner_dim**0.5
             )
@@ -351,7 +352,8 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
             #   (1 = keep,      0 = discard)
             # convert mask into a bias that can be added to attention scores:
             #       (keep = +0,     discard = -10000.0)
-            attention_mask = (1 - attention_mask.to(hidden_states.dtype)) * -10000.0
+            attention_mask = (
+                1 - attention_mask.to(hidden_states.dtype)) * -10000.0
             attention_mask = attention_mask.unsqueeze(1)
 
         # convert encoder_attention_mask to a bias the same way we do for attention_mask
@@ -420,12 +422,13 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
         # 2. Blocks
         if self.caption_projection is not None:
             batch_size = hidden_states.shape[0]
-            encoder_hidden_states = self.caption_projection(encoder_hidden_states)
+            encoder_hidden_states = self.caption_projection(
+                encoder_hidden_states)
             encoder_hidden_states = encoder_hidden_states.view(
                 batch_size, -1, hidden_states.shape[-1]
             )
 
-        garment_features = []
+        reference_features = []
         for block in self.transformer_blocks:
             if self.training and self.gradient_checkpointing:
 
@@ -439,9 +442,10 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
                     return custom_forward
 
                 ckpt_kwargs: Dict[str, Any] = (
-                    {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
+                    {"use_reentrant": False} if is_torch_version(
+                        ">=", "1.11.0") else {}
                 )
-                hidden_states, out_garment_feat = torch.utils.checkpoint.checkpoint(
+                hidden_states, out_reference_features = torch.utils.checkpoint.checkpoint(
                     create_custom_forward(block),
                     hidden_states,
                     attention_mask,
@@ -453,7 +457,7 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
                     **ckpt_kwargs,
                 )
             else:
-                hidden_states, out_garment_feat = block(
+                hidden_states, out_reference_features = block(
                     hidden_states,
                     attention_mask=attention_mask,
                     encoder_hidden_states=encoder_hidden_states,
@@ -462,7 +466,7 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
                     cross_attention_kwargs=cross_attention_kwargs,
                     class_labels=class_labels,
                 )
-            garment_features += out_garment_feat
+            reference_features += out_reference_features
         # 3. Output
         if self.is_input_continuous:
             if not self.use_linear_projection:
@@ -503,9 +507,11 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
                 conditioning = self.transformer_blocks[0].norm1.emb(
                     timestep, class_labels, hidden_dtype=hidden_states.dtype
                 )
-                shift, scale = self.proj_out_1(F.silu(conditioning)).chunk(2, dim=1)
+                shift, scale = self.proj_out_1(
+                    F.silu(conditioning)).chunk(2, dim=1)
                 hidden_states = (
-                    self.norm_out(hidden_states) * (1 + scale[:, None]) + shift[:, None]
+                    self.norm_out(hidden_states) *
+                    (1 + scale[:, None]) + shift[:, None]
                 )
                 hidden_states = self.proj_out_2(hidden_states)
             elif self.config.norm_type == "ada_norm_single":
@@ -542,6 +548,6 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
             )
 
         if not return_dict:
-            return (output,), garment_features
+            return (output,), reference_features
 
-        return Transformer2DModelOutput(sample=output), garment_features
+        return Transformer2DModelOutput(sample=output), reference_features

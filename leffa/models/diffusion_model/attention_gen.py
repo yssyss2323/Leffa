@@ -84,7 +84,8 @@ class GatedSelfAttentionDense(nn.Module):
         # we need a linear projection since we need cat visual feature and obj feature
         self.linear = nn.Linear(context_dim, query_dim)
 
-        self.attn = Attention(query_dim=query_dim, heads=n_heads, dim_head=d_head)
+        self.attn = Attention(query_dim=query_dim,
+                              heads=n_heads, dim_head=d_head)
         self.ff = FeedForward(query_dim, activation_fn="geglu")
 
         self.norm1 = nn.LayerNorm(query_dim)
@@ -254,7 +255,8 @@ class BasicTransformerBlock(nn.Module):
                     "rms_norm",
                 )
             else:
-                self.norm2 = nn.LayerNorm(dim, norm_eps, norm_elementwise_affine)
+                self.norm2 = nn.LayerNorm(
+                    dim, norm_eps, norm_elementwise_affine)
 
             self.attn2 = Attention(
                 query_dim=dim,
@@ -302,7 +304,8 @@ class BasicTransformerBlock(nn.Module):
 
         # 5. Scale-shift for PixArt-Alpha.
         if self.use_ada_layer_norm_single:
-            self.scale_shift_table = nn.Parameter(torch.randn(6, dim) / dim**0.5)
+            self.scale_shift_table = nn.Parameter(
+                torch.randn(6, dim) / dim**0.5)
 
         # let chunk size default to None
         self._chunk_size = None
@@ -322,6 +325,8 @@ class BasicTransformerBlock(nn.Module):
         timestep: Optional[torch.LongTensor] = None,
         cross_attention_kwargs: Dict[str, Any] = None,
         class_labels: Optional[torch.LongTensor] = None,
+        reference_features=None,
+        this_reference_feature_idx=0,
         added_cond_kwargs: Optional[Dict[str, torch.Tensor]] = None,
     ) -> torch.FloatTensor:
         # Notice that normalization is always applied before the real computation in the following blocks.
@@ -342,19 +347,18 @@ class BasicTransformerBlock(nn.Module):
             )
         elif self.use_ada_layer_norm_single:
             shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = (
-                self.scale_shift_table[None] + timestep.reshape(batch_size, 6, -1)
+                self.scale_shift_table[None] +
+                timestep.reshape(batch_size, 6, -1)
             ).chunk(6, dim=1)
             norm_hidden_states = self.norm1(hidden_states)
-            norm_hidden_states = norm_hidden_states * (1 + scale_msa) + shift_msa
+            norm_hidden_states = norm_hidden_states * \
+                (1 + scale_msa) + shift_msa
             norm_hidden_states = norm_hidden_states.squeeze(1)
         else:
             raise ValueError("Incorrect norm used")
 
         if self.pos_embed is not None:
             norm_hidden_states = self.pos_embed(norm_hidden_states)
-
-        garment_features = []
-        garment_features.append(norm_hidden_states)
 
         # 1. Retrieve lora scale.
         lora_scale = (
@@ -369,8 +373,13 @@ class BasicTransformerBlock(nn.Module):
         )
         gligen_kwargs = cross_attention_kwargs.pop("gligen", None)
 
+        # concat reference features with hidden states
+        modify_norm_hidden_states = torch.cat(
+            [norm_hidden_states, reference_features[this_reference_feature_idx]], dim=1
+        )
+        this_reference_feature_idx += 1
         attn_output = self.attn1(
-            norm_hidden_states,
+            modify_norm_hidden_states,
             encoder_hidden_states=(
                 encoder_hidden_states if self.only_cross_attention else None
             ),
@@ -382,7 +391,9 @@ class BasicTransformerBlock(nn.Module):
         elif self.use_ada_layer_norm_single:
             attn_output = gate_msa * attn_output
 
-        hidden_states = attn_output + hidden_states
+        hidden_states = attn_output[:,
+                                    : hidden_states.shape[-2], :] + hidden_states
+
         if hidden_states.ndim == 4:
             hidden_states = hidden_states.squeeze(1)
 
@@ -428,12 +439,14 @@ class BasicTransformerBlock(nn.Module):
 
         if self.use_ada_layer_norm_zero:
             norm_hidden_states = (
-                norm_hidden_states * (1 + scale_mlp[:, None]) + shift_mlp[:, None]
+                norm_hidden_states *
+                (1 + scale_mlp[:, None]) + shift_mlp[:, None]
             )
 
         if self.use_ada_layer_norm_single:
             norm_hidden_states = self.norm2(hidden_states)
-            norm_hidden_states = norm_hidden_states * (1 + scale_mlp) + shift_mlp
+            norm_hidden_states = norm_hidden_states * \
+                (1 + scale_mlp) + shift_mlp
 
         if self._chunk_size is not None:
             # "feed_forward_chunk_size" can be used to save memory
@@ -456,7 +469,7 @@ class BasicTransformerBlock(nn.Module):
         if hidden_states.ndim == 4:
             hidden_states = hidden_states.squeeze(1)
 
-        return hidden_states, garment_features
+        return hidden_states, this_reference_feature_idx
 
 
 @maybe_allow_in_graph
@@ -567,7 +580,8 @@ class TemporalBasicTransformerBlock(nn.Module):
             hidden_states = hidden_states + residual
 
         norm_hidden_states = self.norm1(hidden_states)
-        attn_output = self.attn1(norm_hidden_states, encoder_hidden_states=None)
+        attn_output = self.attn1(
+            norm_hidden_states, encoder_hidden_states=None)
         hidden_states = attn_output + hidden_states
 
         # 3. Cross-Attention
@@ -619,7 +633,8 @@ class SkipFFTransformerBlock(nn.Module):
     ):
         super().__init__()
         if kv_input_dim != dim:
-            self.kv_mapper = nn.Linear(kv_input_dim, dim, kv_input_dim_proj_use_bias)
+            self.kv_mapper = nn.Linear(
+                kv_input_dim, dim, kv_input_dim_proj_use_bias)
         else:
             self.kv_mapper = None
 
@@ -653,7 +668,8 @@ class SkipFFTransformerBlock(nn.Module):
         )
 
         if self.kv_mapper is not None:
-            encoder_hidden_states = self.kv_mapper(F.silu(encoder_hidden_states))
+            encoder_hidden_states = self.kv_mapper(
+                F.silu(encoder_hidden_states))
 
         norm_hidden_states = self.norm1(hidden_states)
 
@@ -730,7 +746,8 @@ class FeedForward(nn.Module):
             self.net.append(nn.Dropout(dropout))
 
     def forward(self, hidden_states: torch.Tensor, scale: float = 1.0) -> torch.Tensor:
-        compatible_cls = (GEGLU,) if USE_PEFT_BACKEND else (GEGLU, LoRACompatibleLinear)
+        compatible_cls = (GEGLU,) if USE_PEFT_BACKEND else (
+            GEGLU, LoRACompatibleLinear)
         for module in self.net:
             if isinstance(module, compatible_cls):
                 hidden_states = module(hidden_states, scale)

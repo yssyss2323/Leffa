@@ -54,7 +54,7 @@ from diffusers.utils import (
 )
 
 # from einops import rearrange
-from leffa.models.diffusion_model.unet_block_hacked_garment import (
+from leffa.models.diffusion_model.unet_block_ref import (
     get_down_block,
     get_up_block,
     UNetMidBlock2D,
@@ -1208,7 +1208,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
 
         # 2. pre-process
         sample = self.conv_in(sample)
-        garment_features = []
+        reference_features = []
 
         # 2.5 GLIGEN position net
         if (
@@ -1269,7 +1269,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                         down_intrablock_additional_residuals.pop(0)
                     )
 
-                sample, res_samples, out_garment_feat = downsample_block(
+                sample, res_samples, out_reference_features = downsample_block(
                     hidden_states=sample,
                     temb=emb,
                     encoder_hidden_states=encoder_hidden_states,
@@ -1278,7 +1278,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                     encoder_attention_mask=encoder_attention_mask,
                     **additional_residuals,
                 )
-                garment_features += out_garment_feat
+                reference_features += out_reference_features
             else:
                 sample, res_samples = downsample_block(
                     hidden_states=sample, temb=emb, scale=lora_scale
@@ -1309,7 +1309,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 hasattr(self.mid_block, "has_cross_attention")
                 and self.mid_block.has_cross_attention
             ):
-                sample, out_garment_feat = self.mid_block(
+                sample, out_reference_features = self.mid_block(
                     sample,
                     emb,
                     encoder_hidden_states=encoder_hidden_states,
@@ -1317,7 +1317,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                     cross_attention_kwargs=cross_attention_kwargs,
                     encoder_attention_mask=encoder_attention_mask,
                 )
-                garment_features += out_garment_feat
+                reference_features += out_reference_features
 
             else:
                 sample = self.mid_block(sample, emb)
@@ -1351,7 +1351,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 hasattr(upsample_block, "has_cross_attention")
                 and upsample_block.has_cross_attention
             ):
-                sample, out_garment_feat = upsample_block(
+                sample, out_reference_features = upsample_block(
                     hidden_states=sample,
                     temb=emb,
                     res_hidden_states_tuple=res_samples,
@@ -1361,7 +1361,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                     attention_mask=attention_mask,
                     encoder_attention_mask=encoder_attention_mask,
                 )
-                garment_features += out_garment_feat
+                reference_features += out_reference_features
             else:
                 sample = upsample_block(
                     hidden_states=sample,
@@ -1372,6 +1372,6 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 )
 
         if not return_dict:
-            return (sample,), garment_features
+            return (sample,), reference_features
 
-        return UNet2DConditionOutput(sample=sample), garment_features
+        return UNet2DConditionOutput(sample=sample), reference_features
