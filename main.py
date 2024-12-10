@@ -30,7 +30,6 @@ def leffa_predict(src_image_path, ref_image_path):
     transform = LeffaTransform()
     model = LeffaModel(
         pretrained_model_name_or_path="/scratch_tmp/grp/grv_shi/k21163430/model/stable-diffusion-inpainting",
-        pretrained_garmentnet_path="/scratch_tmp/grp/grv_shi/k21163430/model/stable-diffusion-inpainting",
         pretrained_model="./ckpts/torchx-genie-vton_v21_2-x9fssfmtzlpq3c_922286324_21.pth",
     )
     inference = LeffaInference(model=model)

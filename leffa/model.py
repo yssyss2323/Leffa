@@ -19,8 +19,6 @@ class LeffaModel(nn.Module):
     def __init__(
         self,
         pretrained_model_name_or_path: str = "",
-        pretrained_vae_name_or_path: str = "",
-        pretrained_garmentnet_path: str = "",
         pretrained_model: str = "",
         new_in_channels: int = 12,  # noisy_image: 4, mask: 1, masked_image: 4, densepose: 3
         height: int = 1024,
@@ -33,8 +31,6 @@ class LeffaModel(nn.Module):
 
         self.build_models(
             pretrained_model_name_or_path,
-            pretrained_vae_name_or_path,
-            pretrained_garmentnet_path,
             pretrained_model,
             new_in_channels,
         )
@@ -42,8 +38,6 @@ class LeffaModel(nn.Module):
     def build_models(
         self,
         pretrained_model_name_or_path: str = "",
-        pretrained_vae_name_or_path: str = "",
-        pretrained_garmentnet_path: str = "",
         pretrained_model: str = "",
         new_in_channels: int = 12,
     ):
@@ -60,24 +54,15 @@ class LeffaModel(nn.Module):
             rescale_betas_zero_snr=False if diffusion_model_type == "sd15" else True,
         )
         # VAE
-        if (
-            pretrained_vae_name_or_path != ""
-            and pretrained_vae_name_or_path is not None
-        ):
-            self.vae = AutoencoderKL.from_pretrained(
-                pretrained_vae_name_or_path,
-                use_safetensors=False,
-            )
-        else:
-            self.vae = AutoencoderKL.from_pretrained(
-                pretrained_model_name_or_path,
-                subfolder="vae",
-                use_safetensors=False,
-            )
+        self.vae = AutoencoderKL.from_pretrained(
+            pretrained_model_name_or_path,
+            subfolder="vae",
+            use_safetensors=False,
+        )
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         # Reference UNet
         self.unet_encoder = ReferenceUNet.from_pretrained(
-            pretrained_garmentnet_path,
+            pretrained_model_name_or_path,
             subfolder="unet",
             use_safetensors=False,
         )

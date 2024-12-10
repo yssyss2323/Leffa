@@ -44,8 +44,8 @@ class LeffaInference(object):
         seed = kwargs.get("seed", 42)
         generator = torch.Generator(self.pipe.device).manual_seed(seed)
         images = self.pipe(
-            image=data["src_image"],
-            condition_image=data["ref_image"],
+            src_image=data["src_image"],
+            ref_image=data["ref_image"],
             mask=data["mask"],
             densepose=data["densepose"],
             num_inference_steps=num_inference_steps,
