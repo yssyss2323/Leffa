@@ -20,14 +20,20 @@ def leffa_predict(src_image_path, ref_image_path, control_type):
 
     # Mask
     if control_type == "virtual_tryon":
-        automasker = AutoMasker()
+        automasker = AutoMasker(
+            densepose_path="./ckpts/densepose",
+            schp_path="./ckpts/schp",
+        )
         src_image = src_image.convert("RGB")
         mask = automasker(src_image, "upper")["mask"]
     elif control_type == "pose_transfer":
         mask = Image.fromarray(np.ones_like(src_image_array) * 255)
 
     # DensePose
-    densepose_predictor = DensePosePredictor()
+    densepose_predictor = DensePosePredictor(
+        config_path="./ckpts/densepose/densepose_rcnn_R_50_FPN_s1x.yaml",
+        weights_path="./ckpts/densepose/model_final_162be9.pkl",
+    )
     src_image_iuv_array = densepose_predictor.predict_iuv(src_image_array)
     src_image_seg_array = densepose_predictor.predict_seg(src_image_array)
     src_image_iuv = Image.fromarray(src_image_iuv_array)

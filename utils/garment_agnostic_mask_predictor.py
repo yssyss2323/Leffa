@@ -200,21 +200,21 @@ def hull_mask(mask_area: np.ndarray):
 class AutoMasker:
     def __init__(
         self,
+        densepose_path: str = "./ckpts/densepose",
+        schp_path: str = "./ckpts/schp",
         device="cuda",
     ):
-        densepose_ckpt = "./ckpts/densepose"
-        schp_ckpt = "./ckpts/schp"
         np.random.seed(0)
         torch.manual_seed(0)
         torch.cuda.manual_seed(0)
 
-        self.densepose_processor = DensePose(densepose_ckpt, device)
+        self.densepose_processor = DensePose(densepose_path, device)
         self.schp_processor_atr = SCHP(
-            ckpt_path=os.path.join(schp_ckpt, "exp-schp-201908301523-atr.pth"),
+            ckpt_path=os.path.join(schp_path, "exp-schp-201908301523-atr.pth"),
             device=device,
         )
         self.schp_processor_lip = SCHP(
-            ckpt_path=os.path.join(schp_ckpt, "exp-schp-201908261155-lip.pth"),
+            ckpt_path=os.path.join(schp_path, "exp-schp-201908261155-lip.pth"),
             device=device,
         )
 
