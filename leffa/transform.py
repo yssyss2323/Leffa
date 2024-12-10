@@ -16,23 +16,13 @@ class LeffaTransform(nn.Module):
         self,
         height: int = 1024,
         width: int = 768,
-        is_train: bool = False,
         dataset: str = "virtual_tryon",  # virtual_tryon or pose_transfer
-        garment_dropout_ratio: float = 0.0,
-        aug_garment_ratio: float = 0.0,
-        get_garment_from_person_ratio: float = 0.0,
-        aug_mask_ratio: float = 0.0,
     ):
         super().__init__()
 
         self.height = height
         self.width = width
-        self.is_train = is_train
         self.dataset = dataset
-        self.garment_dropout_ratio = garment_dropout_ratio
-        self.aug_garment_ratio = aug_garment_ratio
-        self.get_garment_from_person_ratio = get_garment_from_person_ratio
-        self.aug_mask_ratio = aug_mask_ratio
 
         self.vae_processor = VaeImageProcessor(vae_scale_factor=8)
         self.mask_processor = VaeImageProcessor(

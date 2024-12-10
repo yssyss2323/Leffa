@@ -397,15 +397,7 @@ if __name__ == "__main__":
     import os
     import sys
 
-    from diffusers.image_processor import VaeImageProcessor
     from PIL import Image
-
-    mask_processor = VaeImageProcessor(
-        vae_scale_factor=8,
-        do_normalize=False,
-        do_binarize=True,
-        do_convert_grayscale=True,
-    )
 
     automasker = AutoMasker()
 

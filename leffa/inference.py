@@ -53,8 +53,8 @@ class LeffaInference(object):
             generator=generator,
         )[0]
 
-        images = [pil_to_tensor(image) for image in images]
-        images = torch.stack(images)
+        # images = [pil_to_tensor(image) for image in images]
+        # images = torch.stack(images)
 
         outputs = {}
         outputs["person_image"] = (data["image"] + 1.0) / 2.0
