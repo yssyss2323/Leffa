@@ -7,7 +7,6 @@ from densepose.vis.densepose_results import (
 from densepose.vis.extractor import DensePoseResultExtractor
 from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
-from PIL import Image
 
 
 class DensePosePredictor(object):
@@ -16,7 +15,7 @@ class DensePosePredictor(object):
         add_densepose_config(cfg)
         cfg.merge_from_file(
             "ckpts/densepose/densepose_rcnn_R_50_FPN_s1x.yaml"
-        )  # Use the path to the config file from DensePose
+        )  # Use the path to the config file from densepose
         cfg.MODEL.WEIGHTS = "ckpts/densepose/model_final_162be9.pkl"  # Use the path to the pre-trained model weights
         cfg.MODEL.DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
         cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # Adjust as needed

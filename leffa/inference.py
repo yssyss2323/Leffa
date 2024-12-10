@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 import numpy as np
 import torch
 import torch.nn as nn
-from leffa.models.simple_vton_pipeline import SimpleVtonPipeline
+from leffa.pipeline import LeffaPipeline
 
 
 def pil_to_tensor(images):
@@ -28,7 +28,7 @@ class LeffaInference(object):
         self.model = self.model.to(self.device)
         self.model.eval()
 
-        self.pipe = SimpleVtonPipeline(model=self.model, repaint=repaint)
+        self.pipe = LeffaPipeline(model=self.model, repaint=repaint)
 
     def to_gpu(self, data: Dict[str, Any]) -> Dict[str, Any]:
         for k, v in data.items():

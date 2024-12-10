@@ -54,7 +54,7 @@ from diffusers.utils import (
 )
 
 # from einops import rearrange
-from leffa.models.diffusion_model.unet_block_gen import (
+from leffa.diffusion_model.unet_block_gen import (
     get_down_block,
     get_up_block,
     UNetMidBlock2D,

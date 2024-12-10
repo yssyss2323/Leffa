@@ -37,7 +37,7 @@ from diffusers.models.transformers.dual_transformer_2d import DualTransformer2DM
 from diffusers.utils import is_torch_version, logging
 from diffusers.utils.torch_utils import apply_freeu
 from einops import rearrange
-from leffa.models.diffusion_model.transformer_ref import Transformer2DModel
+from leffa.diffusion_model.transformer_gen import Transformer2DModel
 from torch import nn
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
@@ -771,6 +771,8 @@ class UNetMidBlock2DCrossAttn(nn.Module):
         attention_mask: Optional[torch.FloatTensor] = None,
         cross_attention_kwargs: Optional[Dict[str, Any]] = None,
         encoder_attention_mask: Optional[torch.FloatTensor] = None,
+        reference_features=None,
+        this_reference_feature_idx=0,
     ) -> torch.FloatTensor:
         lora_scale = (
             cross_attention_kwargs.get("scale", 1.0)
@@ -778,7 +780,6 @@ class UNetMidBlock2DCrossAttn(nn.Module):
             else 1.0
         )
         hidden_states = self.resnets[0](hidden_states, temb, scale=lora_scale)
-        reference_features = []
         for attn, resnet in zip(self.attentions, self.resnets[1:]):
             if self.training and self.gradient_checkpointing:
 
@@ -795,13 +796,15 @@ class UNetMidBlock2DCrossAttn(nn.Module):
                     {"use_reentrant": False} if is_torch_version(
                         ">=", "1.11.0") else {}
                 )
-                hidden_states, out_reference_features = attn(
+                hidden_states, this_reference_feature_idx = attn(
                     hidden_states,
                     encoder_hidden_states=encoder_hidden_states,
                     cross_attention_kwargs=cross_attention_kwargs,
                     attention_mask=attention_mask,
                     encoder_attention_mask=encoder_attention_mask,
                     return_dict=False,
+                    reference_features=reference_features,
+                    this_reference_feature_idx=this_reference_feature_idx,
                 )
                 hidden_states = hidden_states[0]
                 hidden_states = torch.utils.checkpoint.checkpoint(
@@ -811,18 +814,20 @@ class UNetMidBlock2DCrossAttn(nn.Module):
                     **ckpt_kwargs,
                 )
             else:
-                hidden_states, out_reference_features = attn(
+                hidden_states, this_reference_feature_idx = attn(
                     hidden_states,
                     encoder_hidden_states=encoder_hidden_states,
                     cross_attention_kwargs=cross_attention_kwargs,
                     attention_mask=attention_mask,
                     encoder_attention_mask=encoder_attention_mask,
                     return_dict=False,
+                    reference_features=reference_features,
+                    this_reference_feature_idx=this_reference_feature_idx,
                 )
                 hidden_states = hidden_states[0]
                 hidden_states = resnet(hidden_states, temb, scale=lora_scale)
-            reference_features += out_reference_features
-        return hidden_states, reference_features
+
+        return hidden_states, this_reference_feature_idx
 
 
 class UNetMidBlock2DSimpleCrossAttn(nn.Module):
@@ -1194,6 +1199,8 @@ class CrossAttnDownBlock2D(nn.Module):
         cross_attention_kwargs: Optional[Dict[str, Any]] = None,
         encoder_attention_mask: Optional[torch.FloatTensor] = None,
         additional_residuals: Optional[torch.FloatTensor] = None,
+        reference_features=None,
+        this_reference_feature_idx=0,
     ) -> Tuple[torch.FloatTensor, Tuple[torch.FloatTensor, ...]]:
         output_states = ()
 
@@ -1204,7 +1211,6 @@ class CrossAttnDownBlock2D(nn.Module):
         )
 
         blocks = list(zip(self.resnets, self.attentions))
-        reference_features = []
         for i, (resnet, attn) in enumerate(blocks):
             if self.training and self.gradient_checkpointing:
 
@@ -1227,27 +1233,31 @@ class CrossAttnDownBlock2D(nn.Module):
                     temb,
                     **ckpt_kwargs,
                 )
-                hidden_states, out_reference_features = attn(
+                hidden_states, this_reference_feature_idx = attn(
                     hidden_states,
                     encoder_hidden_states=encoder_hidden_states,
                     cross_attention_kwargs=cross_attention_kwargs,
                     attention_mask=attention_mask,
                     encoder_attention_mask=encoder_attention_mask,
                     return_dict=False,
+                    reference_features=reference_features,
+                    this_reference_feature_idx=this_reference_feature_idx,
                 )
                 hidden_states = hidden_states[0]
             else:
                 hidden_states = resnet(hidden_states, temb, scale=lora_scale)
-                hidden_states, out_reference_features = attn(
+                hidden_states, this_reference_feature_idx = attn(
                     hidden_states,
                     encoder_hidden_states=encoder_hidden_states,
                     cross_attention_kwargs=cross_attention_kwargs,
                     attention_mask=attention_mask,
                     encoder_attention_mask=encoder_attention_mask,
                     return_dict=False,
+                    reference_features=reference_features,
+                    this_reference_feature_idx=this_reference_feature_idx,
                 )
                 hidden_states = hidden_states[0]
-            reference_features += out_reference_features
+
             # apply additional residuals to the output of the last pair of resnet and attention blocks
             if i == len(blocks) - 1 and additional_residuals is not None:
                 hidden_states = hidden_states + additional_residuals
@@ -1260,7 +1270,7 @@ class CrossAttnDownBlock2D(nn.Module):
 
             output_states = output_states + (hidden_states,)
 
-        return hidden_states, output_states, reference_features
+        return hidden_states, output_states, this_reference_feature_idx
 
 
 class DownBlock2D(nn.Module):
@@ -2444,6 +2454,8 @@ class CrossAttnUpBlock2D(nn.Module):
         upsample_size: Optional[int] = None,
         attention_mask: Optional[torch.FloatTensor] = None,
         encoder_attention_mask: Optional[torch.FloatTensor] = None,
+        reference_features=None,
+        this_reference_feature_idx=0,
     ) -> torch.FloatTensor:
         lora_scale = (
             cross_attention_kwargs.get("scale", 1.0)
@@ -2456,7 +2468,7 @@ class CrossAttnUpBlock2D(nn.Module):
             and getattr(self, "b1", None)
             and getattr(self, "b2", None)
         )
-        reference_features = []
+
         for resnet, attn in zip(self.resnets, self.attentions):
 
             res_hidden_states = res_hidden_states_tuple[-1]
@@ -2499,34 +2511,37 @@ class CrossAttnUpBlock2D(nn.Module):
                     temb,
                     **ckpt_kwargs,
                 )
-                hidden_states, out_reference_features = attn(
+                hidden_states, this_reference_feature_idx = attn(
                     hidden_states,
                     encoder_hidden_states=encoder_hidden_states,
                     cross_attention_kwargs=cross_attention_kwargs,
                     attention_mask=attention_mask,
                     encoder_attention_mask=encoder_attention_mask,
                     return_dict=False,
+                    reference_features=reference_features,
+                    this_reference_feature_idx=this_reference_feature_idx,
                 )
                 hidden_states = hidden_states[0]
             else:
                 hidden_states = resnet(hidden_states, temb, scale=lora_scale)
-                hidden_states, out_reference_features = attn(
+                hidden_states, this_reference_feature_idx = attn(
                     hidden_states,
                     encoder_hidden_states=encoder_hidden_states,
                     cross_attention_kwargs=cross_attention_kwargs,
                     attention_mask=attention_mask,
                     encoder_attention_mask=encoder_attention_mask,
                     return_dict=False,
+                    reference_features=reference_features,
+                    this_reference_feature_idx=this_reference_feature_idx,
                 )
                 hidden_states = hidden_states[0]
-            reference_features += out_reference_features
         if self.upsamplers is not None:
             for upsampler in self.upsamplers:
                 hidden_states = upsampler(
                     hidden_states, upsample_size, scale=lora_scale
                 )
 
-        return hidden_states, reference_features
+        return hidden_states, this_reference_feature_idx
 
 
 class UpBlock2D(nn.Module):

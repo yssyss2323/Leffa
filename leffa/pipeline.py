@@ -1,5 +1,4 @@
 import inspect
-from typing import Any, Dict, Union
 
 import numpy as np
 import torch
@@ -9,30 +8,19 @@ import tqdm
 from PIL import Image, ImageFilter
 
 
-class SimpleVtonPipeline:
+class LeffaPipeline(object):
     def __init__(
         self,
         model,
         repaint=True,
-        weight_dtype=torch.float32,
         device="cuda",
-        use_tf32=True,
     ):
-        self.model = model
         self.vae = model.vae
         self.unet_encoder = model.unet_encoder
         self.unet = model.unet
         self.noise_scheduler = model.noise_scheduler
-        self.use_learning_flow_in_attention = model.use_learning_flow_in_attention
-        self.use_attention_flow_loss = model.use_attention_flow_loss
-        self.repaint = repaint
+        self.repaint = repaint  # used for virtual try-on
         self.device = device
-        self.weight_dtype = weight_dtype
-
-        # Enable TF32 for faster training on Ampere GPUs (A100 and RTX 30 series).
-        if use_tf32:
-            torch.set_float32_matmul_precision("high")
-            torch.backends.cuda.matmul.allow_tf32 = True
 
     def prepare_extra_step_kwargs(self, generator, eta):
         # prepare extra kwargs for the scheduler step, since not all schedulers have the same signature
@@ -58,54 +46,53 @@ class SimpleVtonPipeline:
     @torch.no_grad()
     def __call__(
         self,
-        image,
-        condition_image,
+        src_image,
+        ref_image,
         mask,
         densepose,
-        num_inference_steps: int = 30,
+        num_inference_steps: int = 50,
         do_classifier_free_guidance=True,
-        guidance_scale: float = 2.0,
+        guidance_scale: float = 2.5,
         generator=None,
         eta=1.0,
         **kwargs,
     ):
-        image = image.to(device=self.vae.device, dtype=self.vae.dtype)
-        condition_image = condition_image.to(
-            device=self.vae.device, dtype=self.vae.dtype
-        )
+        src_image = src_image.to(device=self.vae.device, dtype=self.vae.dtype)
+        ref_image = ref_image.to(device=self.vae.device, dtype=self.vae.dtype)
         mask = mask.to(device=self.vae.device, dtype=self.vae.dtype)
         densepose = densepose.to(device=self.vae.device, dtype=self.vae.dtype)
-        masked_image = image * (mask < 0.5)
+        masked_image = src_image * (mask < 0.5)
 
         # 1. VAE encoding
         with torch.no_grad():
-            # image_latent = self.vae.encode(image).latent_dist.sample()
-            masked_image_latent = self.vae.encode(masked_image).latent_dist.sample()
-            cond_latent = self.vae.encode(condition_image).latent_dist.sample()
-        # image_latent = image_latent * self.vae.config.scaling_factor
+            # src_image_latent = self.vae.encode(src_image).latent_dist.sample()
+            masked_image_latent = self.vae.encode(
+                masked_image).latent_dist.sample()
+            ref_image_latent = self.vae.encode(ref_image).latent_dist.sample()
+        # src_image_latent = src_image_latent * self.vae.config.scaling_factor
         masked_image_latent = masked_image_latent * self.vae.config.scaling_factor
-        cond_latent = cond_latent * self.vae.config.scaling_factor
+        ref_image_latent = ref_image_latent * self.vae.config.scaling_factor
         mask_latent = F.interpolate(
-            mask, size=masked_image_latent.shape[-2:], mode="nearest"
-        )
+            mask, size=masked_image_latent.shape[-2:], mode="nearest")
         densepose_latent = F.interpolate(
-            densepose, size=masked_image_latent.shape[-2:], mode="nearest"
-        )
+            densepose, size=masked_image_latent.shape[-2:], mode="nearest")
 
         # 2. prepare noise
         noise = torch.randn_like(masked_image_latent)
-        self.noise_scheduler.set_timesteps(num_inference_steps, device=self.device)
+        self.noise_scheduler.set_timesteps(
+            num_inference_steps, device=self.device)
         timesteps = self.noise_scheduler.timesteps
         noise = noise * self.noise_scheduler.init_noise_sigma
-        latents = noise
+        latent = noise
 
         # 3. classifier-free guidance
         if do_classifier_free_guidance:
-            # image_latent = torch.cat([image_latent] * 2)
-            mask_latent = torch.cat([mask_latent] * 2)
+            # src_image_latent = torch.cat([src_image_latent] * 2)
             masked_image_latent = torch.cat([masked_image_latent] * 2)
+            ref_image_latent = torch.cat(
+                [torch.zeros_like(ref_image_latent), ref_image_latent])
+            mask_latent = torch.cat([mask_latent] * 2)
             densepose_latent = torch.cat([densepose_latent] * 2)
-            cond_latent = torch.cat([torch.zeros_like(cond_latent), cond_latent])
 
         # 6. Denoising loop
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
@@ -115,9 +102,10 @@ class SimpleVtonPipeline:
 
         with tqdm.tqdm(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
-                # expand the latents if we are doing classifier free guidance
+                # expand the latent if we are doing classifier free guidance
                 _latent_model_input = (
-                    torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+                    torch.cat(
+                        [latent] * 2) if do_classifier_free_guidance else latent
                 )
                 _latent_model_input = self.noise_scheduler.scale_model_input(
                     _latent_model_input, t
@@ -135,13 +123,9 @@ class SimpleVtonPipeline:
                 )
 
                 down, reference_features = self.unet_encoder(
-                    cond_latent, t, encoder_hidden_states=None, return_dict=False
+                    ref_image_latent, t, encoder_hidden_states=None, return_dict=False
                 )
                 reference_features = list(reference_features)
-                # if do_classifier_free_guidance:
-                #     reference_features = [
-                #         torch.cat([torch.zeros_like(d), d]) for d in reference_features
-                #     ]
 
                 # predict the noise residual
                 noise_pred = self.unet(
@@ -150,7 +134,7 @@ class SimpleVtonPipeline:
                     encoder_hidden_states=None,
                     cross_attention_kwargs=None,
                     added_cond_kwargs=None,
-                    garment_features=reference_features,
+                    reference_features=reference_features,
                     return_dict=False,
                 )[0]
                 # perform guidance
@@ -169,8 +153,8 @@ class SimpleVtonPipeline:
                     )
 
                 # compute the previous noisy sample x_t -> x_t-1
-                latents = self.noise_scheduler.step(
-                    noise_pred, t, latents, **extra_step_kwargs, return_dict=False
+                latent = self.noise_scheduler.step(
+                    noise_pred, t, latent, **extra_step_kwargs, return_dict=False
                 )[0]
                 # call the callback, if provided
                 if i == len(timesteps) - 1 or (
@@ -179,19 +163,19 @@ class SimpleVtonPipeline:
                 ):
                     progress_bar.update()
 
-        # Decode the final latents
-        gen_image = latent_to_image(latents, self.vae)
+        # Decode the final latent
+        gen_image = latent_to_image(latent, self.vae)
 
         if self.repaint:
-            image = (image / 2 + 0.5).clamp(0, 1)
-            image = image.cpu().permute(0, 2, 3, 1).float().numpy()
-            image = numpy_to_pil(image)
+            src_image = (src_image / 2 + 0.5).clamp(0, 1)
+            src_image = src_image.cpu().permute(0, 2, 3, 1).float().numpy()
+            src_image = numpy_to_pil(src_image)
             mask = mask.cpu().permute(0, 2, 3, 1).float().numpy()
             mask = numpy_to_pil(mask)
             mask = [i.convert("RGB") for i in mask]
             gen_image = [
-                repaint(_image, _mask, _gen_image)
-                for _image, _mask, _gen_image in zip(image, mask, gen_image)
+                repaint(_src_image, _mask, _gen_image)
+                for _src_image, _mask, _gen_image in zip(src_image, mask, gen_image)
             ]
 
         return (gen_image,)
@@ -216,7 +200,8 @@ def numpy_to_pil(images):
     images = (images * 255).round().astype("uint8")
     if images.shape[-1] == 1:
         # special case for grayscale (single channel) images
-        pil_images = [Image.fromarray(image.squeeze(), mode="L") for image in images]
+        pil_images = [Image.fromarray(image.squeeze(), mode="L")
+                      for image in images]
     else:
         pil_images = [Image.fromarray(image) for image in images]
 
@@ -250,6 +235,7 @@ def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
     noise_pred_rescaled = noise_cfg * (std_text / std_cfg)
     # mix with the original results from guidance by factor guidance_rescale to avoid "plain looking" images
     noise_cfg = (
-        guidance_rescale * noise_pred_rescaled + (1 - guidance_rescale) * noise_cfg
+        guidance_rescale * noise_pred_rescaled +
+        (1 - guidance_rescale) * noise_cfg
     )
     return noise_cfg

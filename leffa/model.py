@@ -6,17 +6,17 @@ import torch.nn.functional as F
 from diffusers import AutoencoderKL, DDPMScheduler
 from diffusers.models.attention_processor import AttnProcessor2_0
 
-from leffa.models.diffusion_model.unet_ref import (
+from leffa.diffusion_model.unet_ref import (
     UNet2DConditionModel as ReferenceUNet,
 )
-from leffa.models.diffusion_model.unet_gen import (
+from leffa.diffusion_model.unet_gen import (
     UNet2DConditionModel as GenerativeUNet,
 )
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-class SimpleVtonModel(nn.Module):
+class LeffaModel(nn.Module):
     def __init__(
         self,
         pretrained_model_name_or_path: str = "",
@@ -49,47 +49,10 @@ class SimpleVtonModel(nn.Module):
         new_in_channels: int = 12,
     ):
         diffusion_model_type = ""
-        if pretrained_model_name_or_path.startswith("manifold://"):
-            if "stable-diffusion-inpainting" in pretrained_model_name_or_path:
-                diffusion_model_type = "sd15"
-                files_to_cache = [
-                    "scheduler/scheduler_config.json",
-                    "vae/config.json",
-                    "vae/diffusion_pytorch_model.bin",
-                    "unet/config.json",
-                    "unet/diffusion_pytorch_model.bin",
-                ]
-            elif (
-                "stable-diffusion-xl-1.0-inpainting-0.1"
-                in pretrained_model_name_or_path
-            ):
-                diffusion_model_type = "sdxl"
-                files_to_cache = [
-                    "scheduler/scheduler_config.json",
-                    "vae/config.json",
-                    "vae/diffusion_pytorch_model.safetensors",
-                    "unet/config.json",
-                    "unet/diffusion_pytorch_model.safetensors",
-                ]
-            else:
-                raise ValueError(
-                    f"pretrained_model_name_or_path: {pretrained_model_name_or_path} is not supported. Please provide a valid manifold path."
-                )
-            pretrained_model_name_or_path = self.get_local_path(
-                pretrained_model_name_or_path, files_to_cache
-            )
-
-        if pretrained_garmentnet_path.startswith("manifold://"):
-            files_to_cache = [
-                "unet/config.json",
-            ]
-            if diffusion_model_type == "sd15":
-                files_to_cache.append("unet/diffusion_pytorch_model.bin")
-            elif diffusion_model_type == "sdxl":
-                files_to_cache.append("unet/diffusion_pytorch_model.safetensors")
-            pretrained_garmentnet_path = self.get_local_path(
-                pretrained_garmentnet_path, files_to_cache
-            )
+        if "stable-diffusion-inpainting" in pretrained_model_name_or_path:
+            diffusion_model_type = "sd15"
+        elif "stable-diffusion-xl-1.0-inpainting-0.1" in pretrained_model_name_or_path:
+            diffusion_model_type = "sdxl"
 
         # Noise Scheduler
         self.noise_scheduler = DDPMScheduler.from_pretrained(
@@ -102,18 +65,8 @@ class SimpleVtonModel(nn.Module):
             pretrained_vae_name_or_path != ""
             and pretrained_vae_name_or_path is not None
         ):
-            files_to_cache = [
-                "config.json",
-                "diffusion_pytorch_model.safetensors",
-            ]
-            pretrained_vae_name_or_path = self.get_local_path(
-                pretrained_vae_name_or_path, files_to_cache
-            )
             self.vae = AutoencoderKL.from_pretrained(
                 pretrained_vae_name_or_path,
-            )
-            logger.info(
-                "Load pretrained vae from {}".format(pretrained_vae_name_or_path)
             )
         else:
             self.vae = AutoencoderKL.from_pretrained(
@@ -135,6 +88,7 @@ class SimpleVtonModel(nn.Module):
             device_map=None,
         )
         self.unet.config.addition_embed_type = None
+        # Change Generative UNet conv_in and conv_out
         unet_conv_in_channel_changed = self.unet.config.in_channels != new_in_channels
         if unet_conv_in_channel_changed:
             self.unet.conv_in = self.replace_conv_in_layer(self.unet, new_in_channels)
@@ -165,8 +119,9 @@ class SimpleVtonModel(nn.Module):
             )
             self.unet_encoder.config.out_channels = self.vae.config.latent_channels
 
-        add_skip_cross_attention(self.unet)
-        add_skip_cross_attention(self.unet_encoder, model_type="unet_encoder")
+        # Remove Cross Attention
+        remove_cross_attention(self.unet)
+        remove_cross_attention(self.unet_encoder, model_type="unet_encoder")
 
         # Load pretrained model
         if pretrained_model != "" and pretrained_model is not None:
@@ -246,7 +201,7 @@ class SkipAttnProcessor(torch.nn.Module):
         return hidden_states
 
 
-def add_skip_cross_attention(
+def remove_cross_attention(
     unet,
     cross_attn_cls=SkipAttnProcessor,
     self_attn_cls=None,
