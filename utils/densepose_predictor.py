@@ -72,5 +72,5 @@ if __name__ == "__main__":
     predictor = DensePosePredictor()
     image_iuv = predictor.predict_iuv(image)
     image_seg = predictor.predict_seg(image)
-    cv2.imwrite(image_path.split(".")[0] + "_iuv.jpg", image_iuv)
-    cv2.imwrite(image_path.split(".")[0] + "_seg.jpg", image_seg)
+    cv2.imwrite(".".join(image_path.split(".")[:-1]) + "_iuv.jpg", image_iuv)
+    cv2.imwrite(".".join(image_path.split(".")[:-1]) + "_seg.jpg", image_seg)
