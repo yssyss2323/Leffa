@@ -1,4 +1,0 @@
-warmup_iters: 0
-evaluate_every_n_train_steps: ${constants.evaluate_every_n_train_steps}
-evaluate_every_n_train_epochs: ${constants.evaluate_every_n_train_epochs}
-max_eval_steps_per_eval_epoch: ${constants.max_eval_steps_per_eval_epoch}
