@@ -41,10 +41,10 @@ def leffa_predict(src_image_path, ref_image_path, control_type):
     transform = LeffaTransform()
     if control_type == "virtual_tryon":
         pretrained_model_name_or_path = "./ckpts/stable-diffusion-inpainting"
-        pretrained_model = "./ckpts/torchx-genie-vton_v21_2-x9fssfmtzlpq3c_922286324_21.pth"
+        pretrained_model = "./ckpts/virtual_tryon.pth"
     elif control_type == "pose_transfer":
         pretrained_model_name_or_path = "./ckpts/stable-diffusion-xl-1.0-inpainting-0.1"
-        pretrained_model = "./ckpts/torchx-genie-vton_v23_13-txvd3zgj3hs06c_923476887_1274.pth"
+        pretrained_model = "./ckpts/pose_transfer.pth"
     model = LeffaModel(
         pretrained_model_name_or_path=pretrained_model_name_or_path,
         pretrained_model=pretrained_model,
