@@ -18,6 +18,8 @@ def leffa_predict(src_image_path, ref_image_path, control_type):
         "virtual_tryon", "pose_transfer"], "Invalid control type: {}".format(control_type)
     src_image = Image.open(src_image_path)
     ref_image = Image.open(ref_image_path)
+    src_image = src_image.resize((768, 1024))
+    ref_image = ref_image.resize((768, 1024))
 
     src_image_array = np.array(src_image)
     ref_image_array = np.array(ref_image)
