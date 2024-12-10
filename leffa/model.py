@@ -54,27 +54,28 @@ class LeffaModel(nn.Module):
             rescale_betas_zero_snr=False if diffusion_model_type == "sd15" else True,
         )
         # VAE
-        self.vae = AutoencoderKL.from_pretrained(
+        vae_config, vae_kwargs = AutoencoderKL.load_config(
             pretrained_model_name_or_path,
             subfolder="vae",
-            use_safetensors=False,
+            return_unused_kwargs=True,
         )
+        self.vae = AutoencoderKL.from_config(vae_config, **vae_kwargs)
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         # Reference UNet
-        self.unet_encoder = ReferenceUNet.from_pretrained(
+        unet_config, unet_kwargs = ReferenceUNet.load_config(
             pretrained_model_name_or_path,
             subfolder="unet",
-            use_safetensors=False,
+            return_unused_kwargs=True,
         )
+        self.unet_encoder = ReferenceUNet.from_config(unet_config, **unet_kwargs)
         self.unet_encoder.config.addition_embed_type = None
         # Generative UNet
-        self.unet = GenerativeUNet.from_pretrained(
+        unet_config, unet_kwargs = GenerativeUNet.load_config(
             pretrained_model_name_or_path,
             subfolder="unet",
-            low_cpu_mem_usage=False,
-            device_map=None,
-            use_safetensors=False,
+            return_unused_kwargs=True,
         )
+        self.unet = GenerativeUNet.from_config(unet_config, **unet_kwargs)
         self.unet.config.addition_embed_type = None
         # Change Generative UNet conv_in and conv_out
         unet_conv_in_channel_changed = self.unet.config.in_channels != new_in_channels

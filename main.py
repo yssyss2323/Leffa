@@ -7,7 +7,9 @@ from utils.garment_agnostic_mask_predictor import AutoMasker
 from utils.densepose_predictor import DensePosePredictor
 
 
-def leffa_predict(src_image_path, ref_image_path):
+def leffa_predict(src_image_path, ref_image_path, control_type):
+    assert control_type in [
+        "virtual_tryon", "pose_transfer"], "Invalid control type: {}".format(control_type)
     src_image = Image.open(src_image_path)
     ref_image = Image.open(ref_image_path)
 
@@ -15,9 +17,12 @@ def leffa_predict(src_image_path, ref_image_path):
     ref_image_array = np.array(ref_image)
 
     # Mask
-    automasker = AutoMasker()
-    src_image = src_image.convert("RGB")
-    mask = automasker(src_image, "upper")["mask"]
+    if control_type == "virtual_tryon":
+        automasker = AutoMasker()
+        src_image = src_image.convert("RGB")
+        mask = automasker(src_image, "upper")["mask"]
+    elif control_type == "pose_transfer":
+        mask = Image.fromarray(np.ones_like(src_image_array) * 255)
 
     # DensePose
     densepose_predictor = DensePosePredictor()
@@ -25,12 +30,22 @@ def leffa_predict(src_image_path, ref_image_path):
     src_image_seg_array = densepose_predictor.predict_seg(src_image_array)
     src_image_iuv = Image.fromarray(src_image_iuv_array)
     src_image_seg = Image.fromarray(src_image_seg_array)
+    if control_type == "virtual_tryon":
+        densepose = src_image_seg
+    elif control_type == "pose_transfer":
+        densepose = src_image_iuv
 
     # Leffa
     transform = LeffaTransform()
+    if control_type == "virtual_tryon":
+        pretrained_model_name_or_path = "./ckpts/stable-diffusion-inpainting"
+        pretrained_model = "./ckpts/torchx-genie-vton_v21_2-x9fssfmtzlpq3c_922286324_21.pth"
+    elif control_type == "pose_transfer":
+        pretrained_model_name_or_path = "./ckpts/stable-diffusion-xl-1.0-inpainting-0.1"
+        pretrained_model = "./ckpts/torchx-genie-vton_v23_13-txvd3zgj3hs06c_923476887_1274.pth"
     model = LeffaModel(
-        pretrained_model_name_or_path="/scratch_tmp/grp/grv_shi/k21163430/model/stable-diffusion-inpainting",
-        pretrained_model="./ckpts/torchx-genie-vton_v21_2-x9fssfmtzlpq3c_922286324_21.pth",
+        pretrained_model_name_or_path=pretrained_model_name_or_path,
+        pretrained_model=pretrained_model,
     )
     inference = LeffaInference(model=model)
 
@@ -38,7 +53,7 @@ def leffa_predict(src_image_path, ref_image_path):
         "src_image": [src_image],
         "ref_image": [ref_image],
         "mask": [mask],
-        "densepose": [src_image_iuv],
+        "densepose": [densepose],
     }
     data = transform(data)
     output = inference(data)
@@ -51,4 +66,5 @@ if __name__ == "__main__":
 
     src_image_path = sys.argv[1]
     ref_image_path = sys.argv[2]
-    leffa_predict(src_image_path, ref_image_path)
+    control_type = sys.argv[3]
+    leffa_predict(src_image_path, ref_image_path, control_type)
