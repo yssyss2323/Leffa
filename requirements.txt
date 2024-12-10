@@ -1,4 +1,5 @@
 av==12.3.0
+accelerate==1.2.0
 diffusers==0.24.0
 einops==0.7.0
 fvcore==0.1.5.post20221221
@@ -13,6 +14,8 @@ pandas==2.2.2
 pillow==9.4.0
 pycocotools==2.0.8
 pyyaml==6.0.1
+psutil==6.1.0
+peft==0.14.0
 regex==2024.5.15
 safetensors==0.4.3
 scikit-image==0.21.0

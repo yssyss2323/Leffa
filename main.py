@@ -29,9 +29,9 @@ def leffa_predict(src_image_path, ref_image_path):
     # Leffa
     transform = LeffaTransform()
     model = LeffaModel(
-        pretrained_model_name_or_path="",
-        pretrained_garmentnet_path="",
-        pretrained_model="",
+        pretrained_model_name_or_path="/scratch_tmp/grp/grv_shi/k21163430/model/stable-diffusion-inpainting",
+        pretrained_garmentnet_path="/scratch_tmp/grp/grv_shi/k21163430/model/stable-diffusion-inpainting",
+        pretrained_model="./ckpts/torchx-genie-vton_v21_2-x9fssfmtzlpq3c_922286324_21.pth",
     )
     inference = LeffaInference(model=model)
 
@@ -45,3 +45,11 @@ def leffa_predict(src_image_path, ref_image_path):
     output = inference(data)
     gen_image = output["generated_image"][0]
     gen_image.save("gen_image.png")
+
+
+if __name__ == "__main__":
+    import sys
+
+    src_image_path = sys.argv[1]
+    ref_image_path = sys.argv[2]
+    leffa_predict(src_image_path, ref_image_path)
