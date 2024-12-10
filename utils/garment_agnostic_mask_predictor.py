@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from diffusers.image_processor import VaeImageProcessor
 from PIL import Image
-from SCHP import SCHP  # type: ignore
+from schp import SCHP  # type: ignore
 
 from utils.densepose_for_mask import DensePose  # type: ignore
 
