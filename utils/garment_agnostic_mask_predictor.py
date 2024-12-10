@@ -420,4 +420,4 @@ if __name__ == "__main__":
     # densepose = outputs["densepose"]  # densepose I map, range 0~24
     # schp_lip = outputs["schp_lip"]
     # schp_atr = outputs["schp_atr"]
-    mask.save(".".join(image_path.split(".")[0]) + "_mask.jpg")
+    mask.save(".".join(image_path.split(".")[:-1]) + "_mask.jpg")
