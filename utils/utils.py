@@ -1,31 +1,31 @@
+import cv2
+import numpy as np
 from PIL import Image
 
 
-def resize_and_center(image, target_width, target_height, fill_color=(255, 255, 255)):
-    """
-    Resize the image to fit within (target_width, target_height) while maintaining aspect ratio,
-    and center it with padding to match the exact target size.
+def resize_and_center(image, target_width, target_height):
+    img = np.array(image)
 
-    Parameters:
-    - image: PIL.Image object
-    - target_width: Desired width of the final image
-    - target_height: Desired height of the final image
-    - fill_color: Background color used for padding
+    if img.shape[-1] == 4:
+        img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
+    elif len(img.shape) == 2 or img.shape[-1] == 1:
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
-    Returns:
-    - A resized and centered PIL.Image object
-    """
-    # Resize the image while maintaining the aspect ratio
-    image.thumbnail((target_width, target_height), Image.Resampling.LANCZOS)
+    original_height, original_width = img.shape[:2]
 
-    # Create a new image with the desired size and fill color
-    new_image = Image.new("RGB", (target_width, target_height), fill_color)
+    scale = min(target_height / original_height, target_width / original_width)
+    new_height = int(original_height * scale)
+    new_width = int(original_width * scale)
 
-    # Calculate the position to center the resized image
-    x_offset = (target_width - image.width) // 2
-    y_offset = (target_height - image.height) // 2
+    resized_img = cv2.resize(img, (new_width, new_height),
+                             interpolation=cv2.INTER_CUBIC)
 
-    # Paste the resized image onto the new image with padding
-    new_image.paste(image, (x_offset, y_offset))
+    padded_img = np.ones((target_height, target_width, 3),
+                         dtype=np.uint8) * 255
 
-    return new_image
+    top = (target_height - new_height) // 2
+    left = (target_width - new_width) // 2
+
+    padded_img[top:top + new_height, left:left + new_width] = resized_img
+
+    return Image.fromarray(padded_img)
