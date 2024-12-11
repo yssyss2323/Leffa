@@ -21,6 +21,14 @@ An overview of our *Leffa* training pipeline for controllable person image gener
 </div>
 
 
+## Visual Result
+Qualitative visual results comparison with other methods. The input person image for the pose transfer is generated using our method in the virtual try-on. The visualization results demonstrate that our method not only generates high-quality images but also greatly reduces the distortion of fine-grained details.
+
+<div align="center">
+  <img src="https://huggingface.co/franciszzj/Leffa/resolve/main/assets/vis_result.png" width="100%" height="100%"/>
+</div>
+
+
 ## Installation
 
 Create a conda environment and install requirements:
