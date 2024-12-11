@@ -2,7 +2,7 @@
 
 🔥 Huggingface 🤗 [Demo](https://huggingface.co/spaces/franciszzj/Leffa) and [Model](https://huggingface.co/franciszzj/Leffa).
 
-_Leffa_ is a unified framework for controllable person image generation that enables precise manipulation of both appearance (i.e., virtual try-on) and pose (i.e., pose transfer).
+*[Leffa](https://en.wiktionary.org/wiki/leffa)* is a unified framework for controllable person image generation that enables precise manipulation of both appearance (i.e., virtual try-on) and pose (i.e., pose transfer).
 
 <div align="center">
   <img src="https://huggingface.co/franciszzj/Leffa/resolve/main/assets/teaser.png" width="100%" height="100%"/>
