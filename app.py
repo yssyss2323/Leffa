@@ -101,40 +101,59 @@ if __name__ == "__main__":
         with gr.Tab("Control Appearance (Virtual Try-on)"):
             with gr.Row():
                 with gr.Column():
+                    gr.Markdown("#### Person Image")
                     vt_src_image = gr.Image(
                         sources=["upload"],
                         type="filepath",
-                        label="Source Person Image",
+                        label="Person Image",
                         width=512,
                         height=512,
                     )
 
-                    gr.Examples(
-                        inputs=vt_src_image,
-                        examples_per_page=10,
-                        examples=["./examples/14092_00_person.jpg",
-                                  "./examples/14684_00_person.jpg"],
-                    )
+                    # gr.Examples(
+                    #     inputs=vt_src_image,
+                    #     examples_per_page=10,
+                    #     examples=["./examples/person/00006_00.jpg",
+                    #               "./examples/person/00055_00.jpg",
+                    #               "./examples/person/00064_00.jpg",
+                    #               "./examples/person/00249_00.jpg",
+                    #               "./examples/person/00468_00.jpg",
+                    #               "./examples/person/00499_00.jpg",
+                    #               "./examples/person/00568_00.jpg",
+                    #               "./examples/person/00599_00.jpg",
+                    #               "./examples/person/00624_00.jpg",
+                    #               "./examples/person/00690_00.jpg",],
+                    # )
 
                 with gr.Column():
+                    gr.Markdown("#### Garment Image")
                     vt_ref_image = gr.Image(
                         sources=["upload"],
                         type="filepath",
-                        label="Reference Image",
+                        label="Garment Image",
                         width=512,
                         height=512,
                     )
 
-                    gr.Examples(
-                        inputs=vt_ref_image,
-                        examples_per_page=10,
-                        examples=["./examples/04181_00_garment.jpg",
-                                  "./examples/14684_00_garment.jpg"],
-                    )
+                    # gr.Examples(
+                    #     inputs=vt_ref_image,
+                    #     examples_per_page=10,
+                    #     examples=["./examples/garment/00055_00.jpg",
+                    #               "./examples/garment/00291_00.jpg",
+                    #               "./examples/garment/00462_00.jpg",
+                    #               "./examples/garment/00494_00.jpg",
+                    #               "./examples/garment/00641_00.jpg",
+                    #               "./examples/garment/00739_00.jpg",
+                    #               "./examples/garment/00790_00.jpg",
+                    #               "./examples/garment/01074_00.jpg",
+                    #               "./examples/garment/01449_00.jpg",
+                    #               "./examples/garment/01731_00.jpg",],
+                    # )
 
                 with gr.Column():
+                    gr.Markdown("#### Generated Image")
                     vt_gen_image = gr.Image(
-                        label="Generated Person Image",
+                        label="Generated Image",
                         width=512,
                         height=512,
                     )
@@ -148,40 +167,59 @@ if __name__ == "__main__":
         with gr.Tab("Control Pose (Pose Transfer)"):
             with gr.Row():
                 with gr.Column():
-                    pt_src_image = gr.Image(
-                        sources=["upload"],
-                        type="filepath",
-                        label="Source Person Image",
-                        width=512,
-                        height=512,
-                    )
-
-                    gr.Examples(
-                        inputs=pt_src_image,
-                        examples_per_page=10,
-                        examples=["./examples/14092_00_person.jpg",
-                                  "./examples/14684_00_person.jpg"],
-                    )
-
-                with gr.Column():
+                    gr.Markdown("#### Person Image")
                     pt_ref_image = gr.Image(
                         sources=["upload"],
                         type="filepath",
-                        label="Reference Image",
+                        label="Person Image",
                         width=512,
                         height=512,
                     )
 
-                    gr.Examples(
-                        inputs=pt_ref_image,
-                        examples_per_page=10,
-                        examples=["./examples/14092_00_person.jpg",
-                                  "./examples/14684_00_person.jpg"],
-                    )
+                    # gr.Examples(
+                    #     inputs=pt_ref_image,
+                    #     examples_per_page=10,
+                    #     examples=["./examples/person/00006_00.jpg",
+                    #               "./examples/person/00055_00.jpg",
+                    #               "./examples/person/00064_00.jpg",
+                    #               "./examples/person/00249_00.jpg",
+                    #               "./examples/person/00468_00.jpg",
+                    #               "./examples/person/00499_00.jpg",
+                    #               "./examples/person/00568_00.jpg",
+                    #               "./examples/person/00599_00.jpg",
+                    #               "./examples/person/00624_00.jpg",
+                    #               "./examples/person/00690_00.jpg",],
+                    # )
 
                 with gr.Column():
+                    gr.Markdown("#### Target Pose Person Image")
+                    pt_src_image = gr.Image(
+                        sources=["upload"],
+                        type="filepath",
+                        label="Target Pose Person Image",
+                        width=512,
+                        height=512,
+                    )
+
+                    # gr.Examples(
+                    #     inputs=pt_src_image,
+                    #     examples_per_page=10,
+                    #     examples=["./examples/person/00006_00.jpg",
+                    #               "./examples/person/00055_00.jpg",
+                    #               "./examples/person/00064_00.jpg",
+                    #               "./examples/person/00249_00.jpg",
+                    #               "./examples/person/00468_00.jpg",
+                    #               "./examples/person/00499_00.jpg",
+                    #               "./examples/person/00568_00.jpg",
+                    #               "./examples/person/00599_00.jpg",
+                    #               "./examples/person/00624_00.jpg",
+                    #               "./examples/person/00690_00.jpg",],
+                    # )
+
+                with gr.Column():
+                    gr.Markdown("#### Generated Image")
                     pt_gen_image = gr.Image(
-                        label="Generated Person Image",
+                        label="Generated Image",
                         width=512,
                         height=512,
                     )
