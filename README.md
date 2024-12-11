@@ -1,5 +1,4 @@
-# *Leffa*
-Learning Flow Fields in Attention for Controllable Person Image Generation
+# *Leffa*: Learning Flow Fields in Attention for Controllable Person Image Generation
 
 🔥 Huggingface 🤗 [Demo](https://huggingface.co/spaces/franciszzj/Leffa) and [Model](https://huggingface.co/franciszzj/Leffa).
 
