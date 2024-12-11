@@ -11,7 +11,7 @@ from utils.utils import resize_and_center
 import gradio as gr
 
 # Download checkpoints
-snapshot_download(repo_id="franciszzj/Leffa", local_dir="./")
+snapshot_download(repo_id="franciszzj/Leffa", local_dir="./ckpts")
 
 
 def leffa_predict(src_image_path, ref_image_path, control_type):
@@ -93,10 +93,12 @@ if __name__ == "__main__":
     # control_type = sys.argv[3]
     # leffa_predict(src_image_path, ref_image_path, control_type)
 
+    title = "## Leffa: Learning Flow Fields in Attention for Controllable Person Image Generation"
+    description = "Leffa is a unified framework for controllable person image generation that enables precise manipulation of both appearance (i.e., virtual try-on) and pose (i.e., pose transfer)."
+
     with gr.Blocks(theme=gr.themes.Default(primary_hue=gr.themes.colors.pink, secondary_hue=gr.themes.colors.red)).queue() as demo:
-        gr.Markdown(
-            "## Leffa: Learning Flow Fields in Attention for Controllable Person Image Generation")
-        gr.Markdown("Leffa is a unified framework for controllable person image generation that enables precise manipulation of both appearance (i.e., virtual try-on) and pose (i.e., pose transfer).")
+        gr.Markdown(title)
+        gr.Markdown(description)
 
         with gr.Tab("Control Appearance (Virtual Try-on)"):
             with gr.Row():
@@ -113,16 +115,16 @@ if __name__ == "__main__":
                     # gr.Examples(
                     #     inputs=vt_src_image,
                     #     examples_per_page=10,
-                    #     examples=["./examples/person/00006_00.jpg",
-                    #               "./examples/person/00055_00.jpg",
-                    #               "./examples/person/00064_00.jpg",
-                    #               "./examples/person/00249_00.jpg",
-                    #               "./examples/person/00468_00.jpg",
-                    #               "./examples/person/00499_00.jpg",
-                    #               "./examples/person/00568_00.jpg",
-                    #               "./examples/person/00599_00.jpg",
-                    #               "./examples/person/00624_00.jpg",
-                    #               "./examples/person/00690_00.jpg",],
+                    #     examples=["./ckpts/examples/person/00006_00.jpg",
+                    #               "./ckpts/examples/person/00055_00.jpg",
+                    #               "./ckpts/examples/person/00064_00.jpg",
+                    #               "./ckpts/examples/person/00249_00.jpg",
+                    #               "./ckpts/examples/person/00468_00.jpg",
+                    #               "./ckpts/examples/person/00499_00.jpg",
+                    #               "./ckpts/examples/person/00568_00.jpg",
+                    #               "./ckpts/examples/person/00599_00.jpg",
+                    #               "./ckpts/examples/person/00624_00.jpg",
+                    #               "./ckpts/examples/person/00690_00.jpg",],
                     # )
 
                 with gr.Column():
@@ -138,16 +140,16 @@ if __name__ == "__main__":
                     # gr.Examples(
                     #     inputs=vt_ref_image,
                     #     examples_per_page=10,
-                    #     examples=["./examples/garment/00055_00.jpg",
-                    #               "./examples/garment/00291_00.jpg",
-                    #               "./examples/garment/00462_00.jpg",
-                    #               "./examples/garment/00494_00.jpg",
-                    #               "./examples/garment/00641_00.jpg",
-                    #               "./examples/garment/00739_00.jpg",
-                    #               "./examples/garment/00790_00.jpg",
-                    #               "./examples/garment/01074_00.jpg",
-                    #               "./examples/garment/01449_00.jpg",
-                    #               "./examples/garment/01731_00.jpg",],
+                    #     examples=["./ckpts/examples/garment/00055_00.jpg",
+                    #               "./ckpts/examples/garment/00291_00.jpg",
+                    #               "./ckpts/examples/garment/00462_00.jpg",
+                    #               "./ckpts/examples/garment/00494_00.jpg",
+                    #               "./ckpts/examples/garment/00641_00.jpg",
+                    #               "./ckpts/examples/garment/00739_00.jpg",
+                    #               "./ckpts/examples/garment/00790_00.jpg",
+                    #               "./ckpts/examples/garment/01074_00.jpg",
+                    #               "./ckpts/examples/garment/01449_00.jpg",
+                    #               "./ckpts/examples/garment/01731_00.jpg",],
                     # )
 
                 with gr.Column():
@@ -179,16 +181,16 @@ if __name__ == "__main__":
                     # gr.Examples(
                     #     inputs=pt_ref_image,
                     #     examples_per_page=10,
-                    #     examples=["./examples/person/00006_00.jpg",
-                    #               "./examples/person/00055_00.jpg",
-                    #               "./examples/person/00064_00.jpg",
-                    #               "./examples/person/00249_00.jpg",
-                    #               "./examples/person/00468_00.jpg",
-                    #               "./examples/person/00499_00.jpg",
-                    #               "./examples/person/00568_00.jpg",
-                    #               "./examples/person/00599_00.jpg",
-                    #               "./examples/person/00624_00.jpg",
-                    #               "./examples/person/00690_00.jpg",],
+                    #     examples=["./ckpts/examples/person/00006_00.jpg",
+                    #               "./ckpts/examples/person/00055_00.jpg",
+                    #               "./ckpts/examples/person/00064_00.jpg",
+                    #               "./ckpts/examples/person/00249_00.jpg",
+                    #               "./ckpts/examples/person/00468_00.jpg",
+                    #               "./ckpts/examples/person/00499_00.jpg",
+                    #               "./ckpts/examples/person/00568_00.jpg",
+                    #               "./ckpts/examples/person/00599_00.jpg",
+                    #               "./ckpts/examples/person/00624_00.jpg",
+                    #               "./ckpts/examples/person/00690_00.jpg",],
                     # )
 
                 with gr.Column():
@@ -204,16 +206,16 @@ if __name__ == "__main__":
                     # gr.Examples(
                     #     inputs=pt_src_image,
                     #     examples_per_page=10,
-                    #     examples=["./examples/person/00006_00.jpg",
-                    #               "./examples/person/00055_00.jpg",
-                    #               "./examples/person/00064_00.jpg",
-                    #               "./examples/person/00249_00.jpg",
-                    #               "./examples/person/00468_00.jpg",
-                    #               "./examples/person/00499_00.jpg",
-                    #               "./examples/person/00568_00.jpg",
-                    #               "./examples/person/00599_00.jpg",
-                    #               "./examples/person/00624_00.jpg",
-                    #               "./examples/person/00690_00.jpg",],
+                    #     examples=["./ckpts/examples/person/00006_00.jpg",
+                    #               "./ckpts/examples/person/00055_00.jpg",
+                    #               "./ckpts/examples/person/00064_00.jpg",
+                    #               "./ckpts/examples/person/00249_00.jpg",
+                    #               "./ckpts/examples/person/00468_00.jpg",
+                    #               "./ckpts/examples/person/00499_00.jpg",
+                    #               "./ckpts/examples/person/00568_00.jpg",
+                    #               "./ckpts/examples/person/00599_00.jpg",
+                    #               "./ckpts/examples/person/00624_00.jpg",
+                    #               "./ckpts/examples/person/00690_00.jpg",],
                     # )
 
                 with gr.Column():
