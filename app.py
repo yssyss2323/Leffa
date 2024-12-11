@@ -6,41 +6,12 @@ from leffa.model import LeffaModel
 from leffa.inference import LeffaInference
 from utils.garment_agnostic_mask_predictor import AutoMasker
 from utils.densepose_predictor import DensePosePredictor
+from utils.utils import resize_and_center
 
 import gradio as gr
 
 # Download checkpoints
 snapshot_download(repo_id="franciszzj/Leffa", local_dir="./")
-
-
-def resize_and_center(image, target_width, target_height, fill_color=(255, 255, 255)):
-    """
-    Resize the image to fit within (target_width, target_height) while maintaining aspect ratio,
-    and center it with padding to match the exact target size.
-
-    Parameters:
-    - image: PIL.Image object
-    - target_width: Desired width of the final image
-    - target_height: Desired height of the final image
-    - fill_color: Background color used for padding
-
-    Returns:
-    - A resized and centered PIL.Image object
-    """
-    # Resize the image while maintaining the aspect ratio
-    image.thumbnail((target_width, target_height), Image.Resampling.LANCZOS)
-
-    # Create a new image with the desired size and fill color
-    new_image = Image.new("RGB", (target_width, target_height), fill_color)
-
-    # Calculate the position to center the resized image
-    x_offset = (target_width - image.width) // 2
-    y_offset = (target_height - image.height) // 2
-
-    # Paste the resized image onto the new image with padding
-    new_image.paste(image, (x_offset, y_offset))
-
-    return new_image
 
 
 def leffa_predict(src_image_path, ref_image_path, control_type):
@@ -106,6 +77,14 @@ def leffa_predict(src_image_path, ref_image_path, control_type):
     return np.array(gen_image)
 
 
+def leffa_predict_vt(src_image_path, ref_image_path):
+    return leffa_predict(src_image_path, ref_image_path, "virtual_tryon")
+
+
+def leffa_predict_pt(src_image_path, ref_image_path):
+    return leffa_predict(src_image_path, ref_image_path, "pose_transfer")
+
+
 if __name__ == "__main__":
     # import sys
 
@@ -114,56 +93,103 @@ if __name__ == "__main__":
     # control_type = sys.argv[3]
     # leffa_predict(src_image_path, ref_image_path, control_type)
 
-    with gr.Blocks().queue() as demo:
+    with gr.Blocks(theme=gr.themes.Default(primary_hue=gr.themes.colors.pink, secondary_hue=gr.themes.colors.red)).queue() as demo:
         gr.Markdown(
             "## Leffa: Learning Flow Fields in Attention for Controllable Person Image Generation")
         gr.Markdown("Leffa is a unified framework for controllable person image generation that enables precise manipulation of both appearance (i.e., virtual try-on) and pose (i.e., pose transfer).")
-        with gr.Row():
-            with gr.Column():
-                src_image = gr.Image(
-                    sources=["upload"],
-                    type="filepath",
-                    label="Source Person Image",
-                    width=384,
-                    height=512,
-                )
-                with gr.Row():
-                    control_type = gr.Dropdown(
-                        ["virtual_tryon", "pose_transfer"], label="Control Type")
 
-                example = gr.Examples(
-                    inputs=src_image,
-                    examples_per_page=10,
-                    examples=["./examples/14684_00_person.jpg",
-                              "./examples/14092_00_person.jpg"],
-                )
+        with gr.Tab("Control Appearance (Virtual Try-on)"):
+            with gr.Row():
+                with gr.Column():
+                    vt_src_image = gr.Image(
+                        sources=["upload"],
+                        type="filepath",
+                        label="Source Person Image",
+                        width=512,
+                        height=512,
+                    )
 
-            with gr.Column():
-                ref_image = gr.Image(
-                    sources=["upload"],
-                    type="filepath",
-                    label="Reference Image",
-                    width=384,
-                    height=512,
-                )
-                with gr.Row():
-                    gen_button = gr.Button("Generate")
+                    gr.Examples(
+                        inputs=vt_src_image,
+                        examples_per_page=10,
+                        examples=["./examples/14092_00_person.jpg",
+                                  "./examples/14684_00_person.jpg"],
+                    )
 
-                example = gr.Examples(
-                    inputs=ref_image,
-                    examples_per_page=10,
-                    examples=["./examples/04181_00_garment.jpg",
-                              "./examples/14684_00_person.jpg"],
-                )
+                with gr.Column():
+                    vt_ref_image = gr.Image(
+                        sources=["upload"],
+                        type="filepath",
+                        label="Reference Image",
+                        width=512,
+                        height=512,
+                    )
 
-            with gr.Column():
-                gen_image = gr.Image(
-                    label="Generated Person Image",
-                    width=384,
-                    height=512,
-                )
+                    gr.Examples(
+                        inputs=vt_ref_image,
+                        examples_per_page=10,
+                        examples=["./examples/04181_00_garment.jpg",
+                                  "./examples/14684_00_garment.jpg"],
+                    )
 
-            gen_button.click(fn=leffa_predict, inputs=[
-                             src_image, ref_image, control_type], outputs=[gen_image])
+                with gr.Column():
+                    vt_gen_image = gr.Image(
+                        label="Generated Person Image",
+                        width=512,
+                        height=512,
+                    )
+
+                    with gr.Row():
+                        vt_gen_button = gr.Button("Generate")
+
+                vt_gen_button.click(fn=leffa_predict_vt, inputs=[
+                    vt_src_image, vt_ref_image], outputs=[vt_gen_image])
+
+        with gr.Tab("Control Pose (Pose Transfer)"):
+            with gr.Row():
+                with gr.Column():
+                    pt_src_image = gr.Image(
+                        sources=["upload"],
+                        type="filepath",
+                        label="Source Person Image",
+                        width=512,
+                        height=512,
+                    )
+
+                    gr.Examples(
+                        inputs=pt_src_image,
+                        examples_per_page=10,
+                        examples=["./examples/14092_00_person.jpg",
+                                  "./examples/14684_00_person.jpg"],
+                    )
+
+                with gr.Column():
+                    pt_ref_image = gr.Image(
+                        sources=["upload"],
+                        type="filepath",
+                        label="Reference Image",
+                        width=512,
+                        height=512,
+                    )
+
+                    gr.Examples(
+                        inputs=pt_ref_image,
+                        examples_per_page=10,
+                        examples=["./examples/14092_00_person.jpg",
+                                  "./examples/14684_00_person.jpg"],
+                    )
+
+                with gr.Column():
+                    pt_gen_image = gr.Image(
+                        label="Generated Person Image",
+                        width=512,
+                        height=512,
+                    )
+
+                    with gr.Row():
+                        pose_transfer_gen_button = gr.Button("Generate")
+
+                pose_transfer_gen_button.click(fn=leffa_predict_pt, inputs=[
+                    pt_src_image, pt_ref_image], outputs=[pt_gen_image])
 
         demo.launch(share=True, server_port=7860)
