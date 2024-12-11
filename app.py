@@ -169,7 +169,7 @@ if __name__ == "__main__":
                     )
 
                     gr.Examples(
-                        inputs=vt_src_image,
+                        inputs=pt_ref_image,
                         examples_per_page=5,
                         examples=["./ckpts/examples/person1/01320_00.jpg",
                                   "./ckpts/examples/person1/01350_00.jpg",
