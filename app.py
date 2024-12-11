@@ -112,20 +112,15 @@ if __name__ == "__main__":
                         height=512,
                     )
 
-                    # gr.Examples(
-                    #     inputs=vt_src_image,
-                    #     examples_per_page=10,
-                    #     examples=["./ckpts/examples/person/00006_00.jpg",
-                    #               "./ckpts/examples/person/00055_00.jpg",
-                    #               "./ckpts/examples/person/00064_00.jpg",
-                    #               "./ckpts/examples/person/00249_00.jpg",
-                    #               "./ckpts/examples/person/00468_00.jpg",
-                    #               "./ckpts/examples/person/00499_00.jpg",
-                    #               "./ckpts/examples/person/00568_00.jpg",
-                    #               "./ckpts/examples/person/00599_00.jpg",
-                    #               "./ckpts/examples/person/00624_00.jpg",
-                    #               "./ckpts/examples/person/00690_00.jpg",],
-                    # )
+                    gr.Examples(
+                        inputs=vt_src_image,
+                        examples_per_page=5,
+                        examples=["./ckpts/examples/person1/01320_00.jpg",
+                                  "./ckpts/examples/person1/01350_00.jpg",
+                                  "./ckpts/examples/person1/01365_00.jpg",
+                                  "./ckpts/examples/person1/01376_00.jpg",
+                                  "./ckpts/examples/person1/01416_00.jpg",],
+                    )
 
                 with gr.Column():
                     gr.Markdown("#### Garment Image")
@@ -137,20 +132,15 @@ if __name__ == "__main__":
                         height=512,
                     )
 
-                    # gr.Examples(
-                    #     inputs=vt_ref_image,
-                    #     examples_per_page=10,
-                    #     examples=["./ckpts/examples/garment/00055_00.jpg",
-                    #               "./ckpts/examples/garment/00291_00.jpg",
-                    #               "./ckpts/examples/garment/00462_00.jpg",
-                    #               "./ckpts/examples/garment/00494_00.jpg",
-                    #               "./ckpts/examples/garment/00641_00.jpg",
-                    #               "./ckpts/examples/garment/00739_00.jpg",
-                    #               "./ckpts/examples/garment/00790_00.jpg",
-                    #               "./ckpts/examples/garment/01074_00.jpg",
-                    #               "./ckpts/examples/garment/01449_00.jpg",
-                    #               "./ckpts/examples/garment/01731_00.jpg",],
-                    # )
+                    gr.Examples(
+                        inputs=vt_ref_image,
+                        examples_per_page=5,
+                        examples=["./ckpts/examples/garment/01449_00.jpg",
+                                  "./ckpts/examples/garment/01486_00.jpg",
+                                  "./ckpts/examples/garment/01853_00.jpg",
+                                  "./ckpts/examples/garment/02070_00.jpg",
+                                  "./ckpts/examples/garment/03553_00.jpg",],
+                    )
 
                 with gr.Column():
                     gr.Markdown("#### Generated Image")
@@ -178,20 +168,15 @@ if __name__ == "__main__":
                         height=512,
                     )
 
-                    # gr.Examples(
-                    #     inputs=pt_ref_image,
-                    #     examples_per_page=10,
-                    #     examples=["./ckpts/examples/person/00006_00.jpg",
-                    #               "./ckpts/examples/person/00055_00.jpg",
-                    #               "./ckpts/examples/person/00064_00.jpg",
-                    #               "./ckpts/examples/person/00249_00.jpg",
-                    #               "./ckpts/examples/person/00468_00.jpg",
-                    #               "./ckpts/examples/person/00499_00.jpg",
-                    #               "./ckpts/examples/person/00568_00.jpg",
-                    #               "./ckpts/examples/person/00599_00.jpg",
-                    #               "./ckpts/examples/person/00624_00.jpg",
-                    #               "./ckpts/examples/person/00690_00.jpg",],
-                    # )
+                    gr.Examples(
+                        inputs=vt_src_image,
+                        examples_per_page=5,
+                        examples=["./ckpts/examples/person1/01320_00.jpg",
+                                  "./ckpts/examples/person1/01350_00.jpg",
+                                  "./ckpts/examples/person1/01365_00.jpg",
+                                  "./ckpts/examples/person1/01376_00.jpg",
+                                  "./ckpts/examples/person1/01416_00.jpg",],
+                    )
 
                 with gr.Column():
                     gr.Markdown("#### Target Pose Person Image")
@@ -203,20 +188,15 @@ if __name__ == "__main__":
                         height=512,
                     )
 
-                    # gr.Examples(
-                    #     inputs=pt_src_image,
-                    #     examples_per_page=10,
-                    #     examples=["./ckpts/examples/person/00006_00.jpg",
-                    #               "./ckpts/examples/person/00055_00.jpg",
-                    #               "./ckpts/examples/person/00064_00.jpg",
-                    #               "./ckpts/examples/person/00249_00.jpg",
-                    #               "./ckpts/examples/person/00468_00.jpg",
-                    #               "./ckpts/examples/person/00499_00.jpg",
-                    #               "./ckpts/examples/person/00568_00.jpg",
-                    #               "./ckpts/examples/person/00599_00.jpg",
-                    #               "./ckpts/examples/person/00624_00.jpg",
-                    #               "./ckpts/examples/person/00690_00.jpg",],
-                    # )
+                    gr.Examples(
+                        inputs=pt_src_image,
+                        examples_per_page=5,
+                        examples=["./ckpts/examples/person2/01850_00.jpg",
+                                  "./ckpts/examples/person2/01875_00.jpg",
+                                  "./ckpts/examples/person2/02532_00.jpg",
+                                  "./ckpts/examples/person2/02902_00.jpg",
+                                  "./ckpts/examples/person2/05346_00.jpg",],
+                    )
 
                 with gr.Column():
                     gr.Markdown("#### Generated Image")
