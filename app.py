@@ -13,6 +13,28 @@ import gradio as gr
 # Download checkpoints
 snapshot_download(repo_id="franciszzj/Leffa", local_dir="./ckpts")
 
+mask_predictor = AutoMasker(
+    densepose_path="./ckpts/densepose",
+    schp_path="./ckpts/schp",
+)
+
+densepose_predictor = DensePosePredictor(
+    config_path="./ckpts/densepose/densepose_rcnn_R_50_FPN_s1x.yaml",
+    weights_path="./ckpts/densepose/model_final_162be9.pkl",
+)
+
+vt_model = LeffaModel(
+    pretrained_model_name_or_path="./ckpts/stable-diffusion-inpainting",
+    pretrained_model="./ckpts/virtual_tryon.pth",
+)
+vt_inference = LeffaInference(model=vt_model)
+
+pt_model = LeffaModel(
+    pretrained_model_name_or_path="./ckpts/stable-diffusion-xl-1.0-inpainting-0.1",
+    pretrained_model="./ckpts/pose_transfer.pth",
+)
+pt_inference = LeffaInference(model=pt_model)
+
 
 def leffa_predict(src_image_path, ref_image_path, control_type):
     assert control_type in [
@@ -27,20 +49,12 @@ def leffa_predict(src_image_path, ref_image_path, control_type):
 
     # Mask
     if control_type == "virtual_tryon":
-        automasker = AutoMasker(
-            densepose_path="./ckpts/densepose",
-            schp_path="./ckpts/schp",
-        )
         src_image = src_image.convert("RGB")
-        mask = automasker(src_image, "upper")["mask"]
+        mask = mask_predictor(src_image, "upper")["mask"]
     elif control_type == "pose_transfer":
         mask = Image.fromarray(np.ones_like(src_image_array) * 255)
 
     # DensePose
-    densepose_predictor = DensePosePredictor(
-        config_path="./ckpts/densepose/densepose_rcnn_R_50_FPN_s1x.yaml",
-        weights_path="./ckpts/densepose/model_final_162be9.pkl",
-    )
     src_image_iuv_array = densepose_predictor.predict_iuv(src_image_array)
     src_image_seg_array = densepose_predictor.predict_seg(src_image_array)
     src_image_iuv = Image.fromarray(src_image_iuv_array)
@@ -52,17 +66,6 @@ def leffa_predict(src_image_path, ref_image_path, control_type):
 
     # Leffa
     transform = LeffaTransform()
-    if control_type == "virtual_tryon":
-        pretrained_model_name_or_path = "./ckpts/stable-diffusion-inpainting"
-        pretrained_model = "./ckpts/virtual_tryon.pth"
-    elif control_type == "pose_transfer":
-        pretrained_model_name_or_path = "./ckpts/stable-diffusion-xl-1.0-inpainting-0.1"
-        pretrained_model = "./ckpts/pose_transfer.pth"
-    model = LeffaModel(
-        pretrained_model_name_or_path=pretrained_model_name_or_path,
-        pretrained_model=pretrained_model,
-    )
-    inference = LeffaInference(model=model)
 
     data = {
         "src_image": [src_image],
@@ -71,6 +74,10 @@ def leffa_predict(src_image_path, ref_image_path, control_type):
         "densepose": [densepose],
     }
     data = transform(data)
+    if control_type == "virtual_tryon":
+        inference = vt_inference
+    elif control_type == "pose_transfer":
+        inference = pt_inference
     output = inference(data)
     gen_image = output["generated_image"][0]
     # gen_image.save("gen_image.png")

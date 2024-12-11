@@ -17,7 +17,6 @@ class LeffaInference(object):
         self,
         model: nn.Module,
         ckpt_path: Optional[str] = None,
-        repaint: bool = False,
     ) -> None:
         self.model: torch.nn.Module = model
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -28,7 +27,7 @@ class LeffaInference(object):
         self.model = self.model.to(self.device)
         self.model.eval()
 
-        self.pipe = LeffaPipeline(model=self.model, repaint=repaint)
+        self.pipe = LeffaPipeline(model=self.model)
 
     def to_gpu(self, data: Dict[str, Any]) -> Dict[str, Any]:
         for k, v in data.items():
