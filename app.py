@@ -122,11 +122,11 @@ if __name__ == "__main__":
                     gr.Examples(
                         inputs=vt_src_image,
                         examples_per_page=5,
-                        examples=["./ckpts/examples/person1/01320_00.jpg",
-                                  "./ckpts/examples/person1/01350_00.jpg",
-                                  "./ckpts/examples/person1/01365_00.jpg",
+                        examples=["./ckpts/examples/person1/01350_00.jpg",
                                   "./ckpts/examples/person1/01376_00.jpg",
-                                  "./ckpts/examples/person1/01416_00.jpg",],
+                                  "./ckpts/examples/person1/01416_00.jpg",
+                                  "./ckpts/examples/person1/05976_00.jpg",
+                                  "./ckpts/examples/person1/06094_00.jpg",],
                     )
 
                 with gr.Column():
@@ -178,11 +178,11 @@ if __name__ == "__main__":
                     gr.Examples(
                         inputs=pt_ref_image,
                         examples_per_page=5,
-                        examples=["./ckpts/examples/person1/01320_00.jpg",
-                                  "./ckpts/examples/person1/01350_00.jpg",
-                                  "./ckpts/examples/person1/01365_00.jpg",
+                        examples=["./ckpts/examples/person1/01350_00.jpg",
                                   "./ckpts/examples/person1/01376_00.jpg",
-                                  "./ckpts/examples/person1/01416_00.jpg",],
+                                  "./ckpts/examples/person1/01416_00.jpg",
+                                  "./ckpts/examples/person1/05976_00.jpg",
+                                  "./ckpts/examples/person1/06094_00.jpg",],
                     )
 
                 with gr.Column():
