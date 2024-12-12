@@ -1,6 +1,6 @@
 # *Leffa*: Learning Flow Fields in Attention for Controllable Person Image Generation
 
-🔥 Huggingface 🤗 [Demo](https://huggingface.co/spaces/franciszzj/Leffa) and [Model](https://huggingface.co/franciszzj/Leffa).
+[📚 Paper](https://arxiv.org/abs/2412.08486) - [🔥 Demo](https://huggingface.co/spaces/franciszzj/Leffa) - [🤗 Model](https://huggingface.co/franciszzj/Leffa)
 
 *[Leffa](https://en.wiktionary.org/wiki/leffa)* is a unified framework for controllable person image generation that enables precise manipulation of both appearance (i.e., virtual try-on) and pose (i.e., pose transfer).
 
@@ -18,7 +18,6 @@ An overview of our *Leffa* training pipeline for controllable person image gener
   <img src="https://huggingface.co/franciszzj/Leffa/resolve/main/assets/leffa.png" width="100%" height="100%"/>
 </div>
 
-
 ## Visualization
 Qualitative visual results comparison with other methods. The input person image for the pose transfer is generated using our method in the virtual try-on. The visualization results demonstrate that our method not only generates high-quality images but also greatly reduces the distortion of fine-grained details.
 
@@ -27,7 +26,6 @@ Qualitative visual results comparison with other methods. The input person image
 </div>
 
 ## Installation
-
 Create a conda environment and install requirements:
 ```shell
 conda create -n leffa python==3.10
@@ -49,3 +47,14 @@ We use this [code](https://github.com/franciszzj/VtonEval) for metric evaluation
 Our code is based on [Diffusers](https://github.com/huggingface/diffusers) and [Transformers](https://github.com/huggingface/transformers).
 We use [SCHP](https://github.com/GoGoDuck912/Self-Correction-Human-Parsing/tree/master) and [DensePose](https://github.com/facebookresearch/DensePose) to generate masks and densepose in our [Demo](https://huggingface.co/spaces/franciszzj/Leffa).
 We also referred to the code of [IDM-VTON](https://github.com/yisol/IDM-VTON) and [CatVTON](https://github.com/Zheng-Chong/CatVTON).
+
+## Citation
+If you find our work helpful or inspiring, please feel free to cite it.
+```
+@article{zhou2024learning,
+  title={Learning Flow Fields in Attention for Controllable Person Image Generation}, 
+  author={Zhou, Zijian and Liu, Shikun and Han, Xiao and Liu, Haozhe and Ng, Kam Woh and Xie, Tian and Cong, Yuren and Li, Hang and Xu, Mengmeng and Pérez-Rúa, Juan-Manuel and Patel, Aditya and Xiang, Tao and Shi, Miaojing and He, Sen},
+  journal={arXiv preprint arXiv:2412.08486},
+  year={2024},
+}
+```
