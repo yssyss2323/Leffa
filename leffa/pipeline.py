@@ -12,7 +12,7 @@ class LeffaPipeline(object):
     def __init__(
         self,
         model,
-        repaint=True,
+        repaint=False,
         device="cuda",
     ):
         self.vae = model.vae
