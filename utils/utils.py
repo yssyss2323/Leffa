@@ -1,3 +1,4 @@
+import os
 import cv2
 import numpy as np
 from PIL import Image
@@ -29,3 +30,14 @@ def resize_and_center(image, target_width, target_height):
     padded_img[top:top + new_height, left:left + new_width] = resized_img
 
     return Image.fromarray(padded_img)
+
+
+def list_dir(folder_path):
+    # Collect all file paths within the directory
+    file_paths = []
+    for root, _, files in os.walk(folder_path):
+        for file in files:
+            file_paths.append(os.path.join(root, file))
+
+    file_paths = sorted(file_paths)
+    return file_paths
