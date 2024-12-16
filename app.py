@@ -114,12 +114,6 @@ class LeffaPredictor(object):
 
 
 if __name__ == "__main__":
-    # import sys
-
-    # src_image_path = sys.argv[1]
-    # ref_image_path = sys.argv[2]
-    # control_type = sys.argv[3]
-    # leffa_predict(src_image_path, ref_image_path, control_type)
 
     leffa_predictor = LeffaPredictor()
     example_dir = "./ckpts/examples"
