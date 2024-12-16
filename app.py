@@ -101,12 +101,19 @@ if __name__ == "__main__":
     # leffa_predict(src_image_path, ref_image_path, control_type)
 
     title = "## Leffa: Learning Flow Fields in Attention for Controllable Person Image Generation"
-    link = "[📚 Paper](https://arxiv.org/abs/2412.08486) - [🔥 Demo](https://huggingface.co/spaces/franciszzj/Leffa) - [🤗 Model](https://huggingface.co/franciszzj/Leffa)"
+    link = "[📚 Paper](https://arxiv.org/abs/2412.08486) - [🤖 Code](https://github.com/franciszzj/Leffa) - [🔥 Demo](https://huggingface.co/spaces/franciszzj/Leffa) - [🤗 Model](https://huggingface.co/franciszzj/Leffa)"
+    news = """## News
+            - 16/Dec/2024, the virtual try-on [model](https://huggingface.co/franciszzj/Leffa/blob/main/virtual_tryon_dc.pth) trained on DressCode is released.
+            - 12/Dec/2024, the HuggingFace [demo](https://huggingface.co/spaces/franciszzj/Leffa) and [models](https://huggingface.co/franciszzj/Leffa) (virtual try-on model trained on VITON-HD and pose transfer model trained on DeepFashion) are released.
+            - 11/Dec/2024, the [arXiv](https://arxiv.org/abs/2412.08486) version of the paper is released.
+            """
     description = "Leffa is a unified framework for controllable person image generation that enables precise manipulation of both appearance (i.e., virtual try-on) and pose (i.e., pose transfer)."
+    note = "Note: The models used in the demo are trained solely on academic datasets. Virtual try-on uses VITON-HD/DressCode, and pose transfer uses DeepFashion."
 
     with gr.Blocks(theme=gr.themes.Default(primary_hue=gr.themes.colors.pink, secondary_hue=gr.themes.colors.red)).queue() as demo:
         gr.Markdown(title)
         gr.Markdown(link)
+        gr.Markdown(news)
         gr.Markdown(description)
 
         with gr.Tab("Control Appearance (Virtual Try-on)"):
@@ -220,5 +227,7 @@ if __name__ == "__main__":
 
                 pose_transfer_gen_button.click(fn=leffa_predict_pt, inputs=[
                     pt_src_image, pt_ref_image], outputs=[pt_gen_image])
+
+        gr.Markdown(note)
 
         demo.launch(share=True, server_port=7860)

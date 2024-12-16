@@ -1,6 +1,13 @@
 # *Leffa*: Learning Flow Fields in Attention for Controllable Person Image Generation
 
-[📚 Paper](https://arxiv.org/abs/2412.08486) - [🔥 Demo](https://huggingface.co/spaces/franciszzj/Leffa) - [🤗 Model](https://huggingface.co/franciszzj/Leffa)
+[📚 Paper](https://arxiv.org/abs/2412.08486) - [🤖 Code](https://github.com/franciszzj/Leffa) - [🔥 Demo](https://huggingface.co/spaces/franciszzj/Leffa) - [🤗 Model](https://huggingface.co/franciszzj/Leffa)
+
+
+## News
+- 16/Dec/2024, the virtual try-on [model](https://huggingface.co/franciszzj/Leffa/blob/main/virtual_tryon_dc.pth) trained on DressCode is released.
+- 12/Dec/2024, the HuggingFace [demo](https://huggingface.co/spaces/franciszzj/Leffa) and [models](https://huggingface.co/franciszzj/Leffa) (virtual try-on model trained on VITON-HD and pose transfer model trained on DeepFashion) are released.
+- 11/Dec/2024, the [arXiv](https://arxiv.org/abs/2412.08486) version of the paper is released.
+
 
 *[Leffa](https://en.wiktionary.org/wiki/leffa)* is a unified framework for controllable person image generation that enables precise manipulation of both appearance (i.e., virtual try-on) and pose (i.e., pose transfer).
 
@@ -42,6 +49,10 @@ python app.py
 
 ## Evaluation
 We use this [code](https://github.com/franciszzj/VtonEval) for metric evaluation.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=franciszzj/Leffa&type=Date)](https://star-history.com/#franciszzj/Leffa&Date)
 
 ## Acknowledgement
 Our code is based on [Diffusers](https://github.com/huggingface/diffusers) and [Transformers](https://github.com/huggingface/transformers).
