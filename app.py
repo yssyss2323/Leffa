@@ -107,10 +107,10 @@ class LeffaPredictor(object):
 
     def leffa_predict_vt(self, src_image_path, ref_image_path, step, scale, seed, vt_model_type="viton_hd"):
         self.change_vt_model(vt_model_type)
-        return self.leffa_predict(src_image_path, ref_image_path, step, scale, seed, "virtual_tryon")
+        return self.leffa_predict(src_image_path, ref_image_path, "virtual_tryon", step, scale, seed)
 
     def leffa_predict_pt(self, src_image_path, ref_image_path, step, scale, seed):
-        return self.leffa_predict(src_image_path, ref_image_path, step, scale, seed, "pose_transfer")
+        return self.leffa_predict(src_image_path, ref_image_path, "pose_transfer", step, scale, seed)
 
 
 if __name__ == "__main__":
