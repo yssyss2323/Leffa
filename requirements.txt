@@ -1,5 +1,7 @@
 av
 accelerate
+config
+cloudpickle
 diffusers
 einops
 fvcore
@@ -9,6 +11,7 @@ imageio
 matplotlib
 numpy
 omegaconf
+onnxruntime
 opencv-python
 pandas
 pillow
@@ -29,4 +32,3 @@ torchvision
 tqdm
 transformers
 triton
-cloudpickle
