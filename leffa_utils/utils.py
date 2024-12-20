@@ -203,6 +203,37 @@ def get_agnostic_mask(model_parse, keypoint, category, size=(384, 512)):
     parse_mask = np.logical_and(
         parser_mask_changeable, np.logical_not(parse_mask))
     parse_mask_total = np.logical_or(parse_mask, parser_mask_fixed)
-    mask = 1 - parse_mask_total
-    mask = Image.fromarray(torch.stack([mask] * 3, dim=-1).numpy() * 255)
+    inpaint_mask = 1 - parse_mask_total
+    img = np.where(inpaint_mask, 255, 0)
+    dst = hole_fill(img.astype(np.uint8))
+    dst = refine_mask(dst)
+    inpaint_mask = dst / 255 * 1
+    mask = Image.fromarray(inpaint_mask.astype(np.uint8) * 255)
     return mask
+
+
+def hole_fill(img):
+    img = np.pad(img[1:-1, 1:-1], pad_width=1,
+                 mode='constant', constant_values=0)
+    img_copy = img.copy()
+    mask = np.zeros((img.shape[0] + 2, img.shape[1] + 2), dtype=np.uint8)
+
+    cv2.floodFill(img, mask, (0, 0), 255)
+    img_inverse = cv2.bitwise_not(img)
+    dst = cv2.bitwise_or(img_copy, img_inverse)
+    return dst
+
+
+def refine_mask(mask):
+    contours, hierarchy = cv2.findContours(mask.astype(np.uint8),
+                                           cv2.RETR_CCOMP, cv2.CHAIN_APPROX_TC89_L1)
+    area = []
+    for j in range(len(contours)):
+        a_d = cv2.contourArea(contours[j], True)
+        area.append(abs(a_d))
+    refine_mask = np.zeros_like(mask).astype(np.uint8)
+    if len(area) != 0:
+        i = area.index(max(area))
+        cv2.drawContours(refine_mask, contours, i, color=255, thickness=-1)
+
+    return refine_mask
