@@ -37,32 +37,23 @@ class LeffaPredictor(object):
             body_model_path="./ckpts/openpose/body_pose_model.pth",
         )
 
-        vt_model = LeffaModel(
+        vt_model_hd = LeffaModel(
             pretrained_model_name_or_path="./ckpts/stable-diffusion-inpainting",
             pretrained_model="./ckpts/virtual_tryon.pth",
         )
-        self.vt_inference = LeffaInference(model=vt_model)
-        self.vt_model_type = "viton_hd"
+        self.vt_inference_hd = LeffaInference(model=vt_model_hd)
+
+        vt_model_dc = LeffaModel(
+            pretrained_model_name_or_path="./ckpts/stable-diffusion-inpainting",
+            pretrained_model="./ckpts/virtual_tryon_dc.pth",
+        )
+        self.vt_inference_dc = LeffaInference(model=vt_model_dc)
 
         pt_model = LeffaModel(
             pretrained_model_name_or_path="./ckpts/stable-diffusion-xl-1.0-inpainting-0.1",
             pretrained_model="./ckpts/pose_transfer.pth",
         )
         self.pt_inference = LeffaInference(model=pt_model)
-
-    def change_vt_model(self, vt_model_type):
-        if vt_model_type == self.vt_model_type:
-            return
-        if vt_model_type == "viton_hd":
-            pretrained_model = "./ckpts/virtual_tryon.pth"
-        elif vt_model_type == "dress_code":
-            pretrained_model = "./ckpts/virtual_tryon_dc.pth"
-        vt_model = LeffaModel(
-            pretrained_model_name_or_path="./ckpts/stable-diffusion-inpainting",
-            pretrained_model=pretrained_model,
-        )
-        self.vt_inference = LeffaInference(model=vt_model)
-        self.vt_model_type = vt_model_type
 
     def leffa_predict(
         self,
@@ -73,6 +64,7 @@ class LeffaPredictor(object):
         step=50,
         scale=2.5,
         seed=42,
+        vt_model_type="viton_hd",
         vt_garment_type="upper_body",
         vt_repaint=False
     ):
@@ -90,10 +82,10 @@ class LeffaPredictor(object):
             src_image = src_image.convert("RGB")
             model_parse, _ = self.parsing(src_image.resize((384, 512)))
             keypoints = self.openpose(src_image.resize((384, 512)))
-            if self.vt_model_type == "viton_hd":
+            if vt_model_type == "viton_hd":
                 mask = get_agnostic_mask_hd(
                     model_parse, keypoints, vt_garment_type)
-            elif self.vt_model_type == "dress_code":
+            elif vt_model_type == "dress_code":
                 mask = get_agnostic_mask_dc(
                     model_parse, keypoints, vt_garment_type)
             mask = mask.resize((768, 1024))
@@ -105,12 +97,12 @@ class LeffaPredictor(object):
 
         # DensePose
         if control_type == "virtual_tryon":
-            if self.vt_model_type == "viton_hd":
+            if vt_model_type == "viton_hd":
                 src_image_seg_array = self.densepose_predictor.predict_seg(
-                    src_image_array)
+                    src_image_array)[:, :, ::-1]
                 src_image_seg = Image.fromarray(src_image_seg_array)
                 densepose = src_image_seg
-            elif self.vt_model_type == "dress_code":
+            elif vt_model_type == "dress_code":
                 src_image_iuv_array = self.densepose_predictor.predict_iuv(
                     src_image_array)
                 src_image_seg_array = src_image_iuv_array[:, :, 0:1]
@@ -120,7 +112,7 @@ class LeffaPredictor(object):
                 densepose = src_image_seg
         elif control_type == "pose_transfer":
             src_image_iuv_array = self.densepose_predictor.predict_iuv(
-                src_image_array)
+                src_image_array)[:, :, ::-1]
             src_image_iuv = Image.fromarray(src_image_iuv_array)
             densepose = src_image_iuv
 
@@ -135,7 +127,10 @@ class LeffaPredictor(object):
         }
         data = transform(data)
         if control_type == "virtual_tryon":
-            inference = self.vt_inference
+            if vt_model_type == "viton_hd":
+                inference = self.vt_inference_hd
+            elif vt_model_type == "dress_code":
+                inference = self.vt_inference_dc
         elif control_type == "pose_transfer":
             inference = self.pt_inference
         output = inference(
@@ -150,8 +145,7 @@ class LeffaPredictor(object):
         return np.array(gen_image), np.array(mask), np.array(densepose)
 
     def leffa_predict_vt(self, src_image_path, ref_image_path, ref_acceleration, step, scale, seed, vt_model_type, vt_garment_type, vt_repaint):
-        self.change_vt_model(vt_model_type)
-        return self.leffa_predict(src_image_path, ref_image_path, "virtual_tryon", ref_acceleration, step, scale, seed, vt_garment_type, vt_repaint)
+        return self.leffa_predict(src_image_path, ref_image_path, "virtual_tryon", ref_acceleration, step, scale, seed, vt_model_type, vt_garment_type, vt_repaint)
 
     def leffa_predict_pt(self, src_image_path, ref_image_path, ref_acceleration, step, scale, seed):
         return self.leffa_predict(src_image_path, ref_image_path, "pose_transfer", ref_acceleration, step, scale, seed)
