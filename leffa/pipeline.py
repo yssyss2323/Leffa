@@ -102,7 +102,7 @@ class LeffaPipeline(object):
 
         if ref_acceleration:
             down, reference_features = self.unet_encoder(
-                ref_image_latent, timesteps[-1], encoder_hidden_states=None, return_dict=False
+                ref_image_latent, timesteps[num_inference_steps//2], encoder_hidden_states=None, return_dict=False
             )
             reference_features = list(reference_features)
 

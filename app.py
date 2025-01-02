@@ -242,9 +242,9 @@ if __name__ == "__main__":
                         )
 
                         vt_ref_acceleration = gr.Radio(
-                            label="Accelerate Reference UNet",
+                            label="Accelerate Reference UNet (may slightly reduce performance)",
                             choices=[("True", True), ("False", False)],
-                            value=True,
+                            value=False,
                         )
 
                         vt_repaint = gr.Radio(
@@ -327,7 +327,7 @@ if __name__ == "__main__":
                         pt_ref_acceleration = gr.Radio(
                             label="Accelerate Reference UNet",
                             choices=[("True", True), ("False", False)],
-                            value=True,
+                            value=False,
                         )
 
                         pt_step = gr.Number(
