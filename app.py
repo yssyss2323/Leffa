@@ -168,7 +168,7 @@ if __name__ == "__main__":
     title = "## Leffa: Learning Flow Fields in Attention for Controllable Person Image Generation"
     link = "[📚 Paper](https://arxiv.org/abs/2412.08486) - [🤖 Code](https://github.com/franciszzj/Leffa) - [🔥 Demo](https://huggingface.co/spaces/franciszzj/Leffa) - [🤗 Model](https://huggingface.co/franciszzj/Leffa)"
     news = """## News
-            - 02/Jan/2025, Update the mask generator to improve results. Add ref unet acceleration, boosting prediction speed by 30%. Include more controls in Advanced Options to enhance user experience. Enable intermediate result output for easier development. Enjoy using it!.
+            - 02/Jan/2025, Update the mask generator to improve results. Add ref unet acceleration, boosting prediction speed by 30%. Include more controls in Advanced Options to enhance user experience. Enable intermediate result output for easier development. Enjoy using it!
             More news can be found in the [GitHub repository](https://github.com/franciszzj/Leffa).
             """
     description = "Leffa is a unified framework for controllable person image generation that enables precise manipulation of both appearance (i.e., virtual try-on) and pose (i.e., pose transfer)."
