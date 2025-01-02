@@ -73,7 +73,6 @@ class LeffaPredictor(object):
         step=50,
         scale=2.5,
         seed=42,
-        vt_mask_type="1",
         vt_garment_type="upper_body",
         vt_repaint=False
     ):
@@ -150,9 +149,9 @@ class LeffaPredictor(object):
         # gen_image.save("gen_image.png")
         return np.array(gen_image), np.array(mask), np.array(densepose)
 
-    def leffa_predict_vt(self, src_image_path, ref_image_path, ref_acceleration, step, scale, seed, vt_model_type, vt_mask_type, vt_garment_type, vt_repaint):
+    def leffa_predict_vt(self, src_image_path, ref_image_path, ref_acceleration, step, scale, seed, vt_model_type, vt_garment_type, vt_repaint):
         self.change_vt_model(vt_model_type)
-        return self.leffa_predict(src_image_path, ref_image_path, "virtual_tryon", ref_acceleration, step, scale, seed, vt_mask_type, vt_garment_type, vt_repaint)
+        return self.leffa_predict(src_image_path, ref_image_path, "virtual_tryon", ref_acceleration, step, scale, seed, vt_garment_type, vt_repaint)
 
     def leffa_predict_pt(self, src_image_path, ref_image_path, ref_acceleration, step, scale, seed):
         return self.leffa_predict(src_image_path, ref_image_path, "pose_transfer", ref_acceleration, step, scale, seed)
@@ -169,10 +168,8 @@ if __name__ == "__main__":
     title = "## Leffa: Learning Flow Fields in Attention for Controllable Person Image Generation"
     link = "[📚 Paper](https://arxiv.org/abs/2412.08486) - [🤖 Code](https://github.com/franciszzj/Leffa) - [🔥 Demo](https://huggingface.co/spaces/franciszzj/Leffa) - [🤗 Model](https://huggingface.co/franciszzj/Leffa)"
     news = """## News
-            - 18/Dec/2024, thanks to @[StartHua](https://github.com/StartHua) for integrating Leffa into ComfyUI! Here is the [repo](https://github.com/StartHua/Comfyui_leffa)!
-            - 16/Dec/2024, the virtual try-on [model](https://huggingface.co/franciszzj/Leffa/blob/main/virtual_tryon_dc.pth) trained on DressCode is released.
-            - 12/Dec/2024, the HuggingFace [demo](https://huggingface.co/spaces/franciszzj/Leffa) and [models](https://huggingface.co/franciszzj/Leffa) (virtual try-on model trained on VITON-HD and pose transfer model trained on DeepFashion) are released.
-            - 11/Dec/2024, the [arXiv](https://arxiv.org/abs/2412.08486) version of the paper is released.
+            - 02/Jan/2025, Update the mask generator to improve results. Add ref unet acceleration, boosting prediction speed by 30%. Include more controls in Advanced Options to enhance user experience. Enable intermediate result output for easier development. Enjoy using it!.
+            More news can be found in the [GitHub repository](https://github.com/franciszzj/Leffa).
             """
     description = "Leffa is a unified framework for controllable person image generation that enables precise manipulation of both appearance (i.e., virtual try-on) and pose (i.e., pose transfer)."
     note = "Note: The models used in the demo are trained solely on academic datasets. Virtual try-on uses VITON-HD/DressCode, and pose transfer uses DeepFashion."
@@ -236,14 +233,6 @@ if __name__ == "__main__":
                             value="viton_hd",
                         )
 
-                        vt_mask_type = gr.Radio(
-                            label="Mask Type",
-                            choices=[("AutoMasker", "1"),
-                                     ("OpenPose + Parsing", "2"),
-                                     ("OpenPose + Parsing (HD)", "3")],
-                            value="3",
-                        )
-
                         vt_garment_type = gr.Radio(
                             label="Garment Type",
                             choices=[("Upper", "upper_body"),
@@ -287,7 +276,7 @@ if __name__ == "__main__":
                         )
 
                 vt_gen_button.click(fn=leffa_predictor.leffa_predict_vt, inputs=[
-                    vt_src_image, vt_ref_image, vt_ref_acceleration, vt_step, vt_scale, vt_seed, vt_model_type, vt_mask_type, vt_garment_type, vt_repaint], outputs=[vt_gen_image, vt_mask, vt_densepose])
+                    vt_src_image, vt_ref_image, vt_ref_acceleration, vt_step, vt_scale, vt_seed, vt_model_type, vt_garment_type, vt_repaint], outputs=[vt_gen_image, vt_mask, vt_densepose])
 
         with gr.Tab("Control Pose (Pose Transfer)"):
             with gr.Row():
