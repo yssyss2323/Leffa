@@ -6,7 +6,7 @@ from leffa.model import LeffaModel
 from leffa.inference import LeffaInference
 from leffa_utils.garment_agnostic_mask_predictor import AutoMasker
 from leffa_utils.densepose_predictor import DensePosePredictor
-from leffa_utils.utils import resize_and_center, list_dir, get_agnostic_mask
+from leffa_utils.utils import resize_and_center, list_dir, get_agnostic_mask_hd, get_agnostic_mask_dc
 from preprocess.humanparsing.run_parsing import Parsing
 from preprocess.openpose.run_openpose import OpenPose
 
@@ -64,7 +64,19 @@ class LeffaPredictor(object):
         self.vt_inference = LeffaInference(model=vt_model)
         self.vt_model_type = vt_model_type
 
-    def leffa_predict(self, src_image_path, ref_image_path, control_type, step=50, scale=2.5, seed=42, garment_type="upper_body"):
+    def leffa_predict(
+        self,
+        src_image_path,
+        ref_image_path,
+        control_type,
+        ref_acceleration=True,
+        step=50,
+        scale=2.5,
+        seed=42,
+        vt_mask_type="1",
+        vt_garment_type="upper_body",
+        vt_repaint=False
+    ):
         assert control_type in [
             "virtual_tryon", "pose_transfer"], "Invalid control type: {}".format(control_type)
         src_image = Image.open(src_image_path)
@@ -77,15 +89,18 @@ class LeffaPredictor(object):
         # Mask
         if control_type == "virtual_tryon":
             src_image = src_image.convert("RGB")
+            model_parse, _ = self.parsing(src_image.resize((384, 512)))
+            keypoints = self.openpose(src_image.resize((384, 512)))
             if self.vt_model_type == "viton_hd":
-                garment_type_hd = "upper" if garment_type in [
-                    "upper_body", "dresses"] else "lower"
-                mask = self.mask_predictor(src_image, garment_type_hd)["mask"]
+                mask = get_agnostic_mask_hd(
+                    model_parse, keypoints, vt_garment_type)
             elif self.vt_model_type == "dress_code":
-                keypoints = self.openpose(src_image.resize((384, 512)))
-                model_parse, _ = self.parsing(src_image.resize((384, 512)))
-                mask = get_agnostic_mask(model_parse, keypoints, garment_type)
-                mask = mask.resize((768, 1024))
+                mask = get_agnostic_mask_dc(
+                    model_parse, keypoints, vt_garment_type)
+            mask = mask.resize((768, 1024))
+            # garment_type_hd = "upper" if vt_garment_type in [
+            #     "upper_body", "dresses"] else "lower"
+            # mask = self.mask_predictor(src_image, garment_type_hd)["mask"]
         elif control_type == "pose_transfer":
             mask = Image.fromarray(np.ones_like(src_image_array) * 255)
 
@@ -126,19 +141,21 @@ class LeffaPredictor(object):
             inference = self.pt_inference
         output = inference(
             data,
+            ref_acceleration=ref_acceleration,
             num_inference_steps=step,
             guidance_scale=scale,
-            seed=seed,)
+            seed=seed,
+            repaint=vt_repaint,)
         gen_image = output["generated_image"][0]
         # gen_image.save("gen_image.png")
-        return np.array(gen_image)
+        return np.array(gen_image), np.array(mask), np.array(densepose)
 
-    def leffa_predict_vt(self, src_image_path, ref_image_path, step, scale, seed, vt_model_type, vt_garment_type):
+    def leffa_predict_vt(self, src_image_path, ref_image_path, ref_acceleration, step, scale, seed, vt_model_type, vt_mask_type, vt_garment_type, vt_repaint):
         self.change_vt_model(vt_model_type)
-        return self.leffa_predict(src_image_path, ref_image_path, "virtual_tryon", step, scale, seed, vt_garment_type)
+        return self.leffa_predict(src_image_path, ref_image_path, "virtual_tryon", ref_acceleration, step, scale, seed, vt_mask_type, vt_garment_type, vt_repaint)
 
-    def leffa_predict_pt(self, src_image_path, ref_image_path, step, scale, seed):
-        return self.leffa_predict(src_image_path, ref_image_path, "pose_transfer", step, scale, seed)
+    def leffa_predict_pt(self, src_image_path, ref_image_path, ref_acceleration, step, scale, seed):
+        return self.leffa_predict(src_image_path, ref_image_path, "pose_transfer", ref_acceleration, step, scale, seed)
 
 
 if __name__ == "__main__":
@@ -214,14 +231,37 @@ if __name__ == "__main__":
                     with gr.Accordion("Advanced Options", open=False):
                         vt_model_type = gr.Radio(
                             label="Model Type",
-                            choices=["viton_hd", "dress_code"],
+                            choices=[("VITON-HD (Recommended)", "viton_hd"),
+                                     ("DressCode (Experimental)", "dress_code")],
                             value="viton_hd",
+                        )
+
+                        vt_mask_type = gr.Radio(
+                            label="Mask Type",
+                            choices=[("AutoMasker", "1"),
+                                     ("OpenPose + Parsing", "2"),
+                                     ("OpenPose + Parsing (HD)", "3")],
+                            value="3",
                         )
 
                         vt_garment_type = gr.Radio(
                             label="Garment Type",
-                            choices=["upper_body", "lower_body", "dresses"],
+                            choices=[("Upper", "upper_body"),
+                                     ("Lower", "lower_body"),
+                                     ("Dress", "dresses")],
                             value="upper_body",
+                        )
+
+                        vt_ref_acceleration = gr.Radio(
+                            label="Accelerate Reference UNet",
+                            choices=[("True", True), ("False", False)],
+                            value=True,
+                        )
+
+                        vt_repaint = gr.Radio(
+                            label="Repaint Mode",
+                            choices=[("True", True), ("False", False)],
+                            value=False,
                         )
 
                         vt_step = gr.Number(
@@ -233,8 +273,21 @@ if __name__ == "__main__":
                         vt_seed = gr.Number(
                             label="Random Seed", minimum=-1, maximum=2147483647, step=1, value=42)
 
+                    with gr.Accordion("Debug", open=False):
+                        vt_mask = gr.Image(
+                            label="Generated Mask",
+                            width=256,
+                            height=256,
+                        )
+
+                        vt_densepose = gr.Image(
+                            label="Generated DensePose",
+                            width=256,
+                            height=256,
+                        )
+
                 vt_gen_button.click(fn=leffa_predictor.leffa_predict_vt, inputs=[
-                    vt_src_image, vt_ref_image, vt_step, vt_scale, vt_seed, vt_model_type, vt_garment_type], outputs=[vt_gen_image])
+                    vt_src_image, vt_ref_image, vt_ref_acceleration, vt_step, vt_scale, vt_seed, vt_model_type, vt_mask_type, vt_garment_type, vt_repaint], outputs=[vt_gen_image, vt_mask, vt_densepose])
 
         with gr.Tab("Control Pose (Pose Transfer)"):
             with gr.Row():
@@ -282,6 +335,12 @@ if __name__ == "__main__":
                         pose_transfer_gen_button = gr.Button("Generate")
 
                     with gr.Accordion("Advanced Options", open=False):
+                        pt_ref_acceleration = gr.Radio(
+                            label="Accelerate Reference UNet",
+                            choices=[("True", True), ("False", False)],
+                            value=True,
+                        )
+
                         pt_step = gr.Number(
                             label="Inference Steps", minimum=30, maximum=100, step=1, value=50)
 
@@ -291,9 +350,23 @@ if __name__ == "__main__":
                         pt_seed = gr.Number(
                             label="Random Seed", minimum=-1, maximum=2147483647, step=1, value=42)
 
+                    with gr.Accordion("Debug", open=False):
+                        pt_mask = gr.Image(
+                            label="Generated Mask",
+                            width=256,
+                            height=256,
+                        )
+
+                        pt_densepose = gr.Image(
+                            label="Generated DensePose",
+                            width=256,
+                            height=256,
+                        )
+
                 pose_transfer_gen_button.click(fn=leffa_predictor.leffa_predict_pt, inputs=[
-                    pt_src_image, pt_ref_image, pt_step, pt_scale, pt_seed], outputs=[pt_gen_image])
+                    pt_src_image, pt_ref_image, pt_ref_acceleration, pt_step, pt_scale, pt_seed], outputs=[pt_gen_image, pt_mask, pt_densepose])
 
         gr.Markdown(note)
 
-        demo.launch(share=True, server_port=7860)
+        demo.launch(share=True, server_port=7860,
+                    allowed_paths=["./ckpts/examples"])

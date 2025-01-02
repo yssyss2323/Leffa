@@ -16,15 +16,10 @@ class LeffaInference(object):
     def __init__(
         self,
         model: nn.Module,
-        ckpt_path: Optional[str] = None,
     ) -> None:
-        self.model: torch.nn.Module = model
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        # load model
-        if ckpt_path is not None:
-            self.model.load_state_dict(torch.load(ckpt_path, map_location="cpu"))
-        self.model = self.model.to(self.device)
+        self.model = model.to(self.device)
         self.model.eval()
 
         self.pipe = LeffaPipeline(model=self.model)

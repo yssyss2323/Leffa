@@ -12,14 +12,12 @@ class LeffaPipeline(object):
     def __init__(
         self,
         model,
-        repaint=False,
         device="cuda",
     ):
         self.vae = model.vae
         self.unet_encoder = model.unet_encoder
         self.unet = model.unet
         self.noise_scheduler = model.noise_scheduler
-        self.repaint = repaint  # used for virtual try-on
         self.device = device
 
     def prepare_extra_step_kwargs(self, generator, eta):
@@ -50,11 +48,13 @@ class LeffaPipeline(object):
         ref_image,
         mask,
         densepose,
-        num_inference_steps: int = 50,
+        ref_acceleration=True,
+        num_inference_steps=50,
         do_classifier_free_guidance=True,
-        guidance_scale: float = 2.5,
+        guidance_scale=2.5,
         generator=None,
         eta=1.0,
+        repaint=False,  # used for virtual try-on
         **kwargs,
     ):
         src_image = src_image.to(device=self.vae.device, dtype=self.vae.dtype)
@@ -100,6 +100,13 @@ class LeffaPipeline(object):
             len(timesteps) - num_inference_steps * self.noise_scheduler.order
         )
 
+        if ref_acceleration:
+            down, reference_features = self.unet_encoder(
+                ref_image_latent, timesteps[-1], encoder_hidden_states=None, return_dict=False
+            )
+            reference_features = list(reference_features)
+
+
         with tqdm.tqdm(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
                 # expand the latent if we are doing classifier free guidance
@@ -122,10 +129,11 @@ class LeffaPipeline(object):
                     dim=1,
                 )
 
-                down, reference_features = self.unet_encoder(
-                    ref_image_latent, t, encoder_hidden_states=None, return_dict=False
-                )
-                reference_features = list(reference_features)
+                if not ref_acceleration:
+                    down, reference_features = self.unet_encoder(
+                        ref_image_latent, t, encoder_hidden_states=None, return_dict=False
+                    )
+                    reference_features = list(reference_features)
 
                 # predict the noise residual
                 noise_pred = self.unet(
@@ -166,7 +174,7 @@ class LeffaPipeline(object):
         # Decode the final latent
         gen_image = latent_to_image(latent, self.vae)
 
-        if self.repaint:
+        if repaint:
             src_image = (src_image / 2 + 0.5).clamp(0, 1)
             src_image = src_image.cpu().permute(0, 2, 3, 1).float().numpy()
             src_image = numpy_to_pil(src_image)
