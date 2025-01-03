@@ -204,9 +204,12 @@ def get_agnostic_mask_hd(model_parse, keypoint, category, size=(384, 512)):
         hands_right = np.logical_and(np.logical_not(im_arms_right), arms_right)
         parser_mask_fixed += hands_left + hands_right
 
+    parser_mask_fixed = cv2.erode(parser_mask_fixed, np.ones(
+        (5, 5), np.uint16), iterations=1)
+
     parser_mask_fixed = np.logical_or(parser_mask_fixed, parse_head)
     parse_mask = cv2.dilate(parse_mask, np.ones(
-        (5, 5), np.uint16), iterations=5)
+        (10, 10), np.uint16), iterations=5)
     if category == 'dresses' or category == 'upper_body':
         neck_mask = (parse_array == 18).astype(np.float32)
         neck_mask = cv2.dilate(neck_mask, np.ones(
