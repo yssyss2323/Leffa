@@ -33,18 +33,22 @@ class LeffaInference(object):
     def __call__(self, data: Dict[str, Any], **kwargs) -> Dict[str, Any]:
         data = self.to_gpu(data)
 
+        ref_acceleration = kwargs.get("ref_acceleration", False)
         num_inference_steps = kwargs.get("num_inference_steps", 50)
         guidance_scale = kwargs.get("guidance_scale", 2.5)
         seed = kwargs.get("seed", 42)
+        repaint = kwargs.get("repaint", False)
         generator = torch.Generator(self.pipe.device).manual_seed(seed)
         images = self.pipe(
             src_image=data["src_image"],
             ref_image=data["ref_image"],
             mask=data["mask"],
             densepose=data["densepose"],
+            ref_acceleration=ref_acceleration,
             num_inference_steps=num_inference_steps,
             guidance_scale=guidance_scale,
             generator=generator,
+            repaint=repaint,
         )[0]
 
         # images = [pil_to_tensor(image) for image in images]
