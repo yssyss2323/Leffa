@@ -48,7 +48,7 @@ class LeffaPipeline(object):
         ref_image,
         mask,
         densepose,
-        ref_acceleration=True,
+        ref_acceleration=False,
         num_inference_steps=50,
         do_classifier_free_guidance=True,
         guidance_scale=2.5,

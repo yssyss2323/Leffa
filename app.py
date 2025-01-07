@@ -60,7 +60,7 @@ class LeffaPredictor(object):
         src_image_path,
         ref_image_path,
         control_type,
-        ref_acceleration=True,
+        ref_acceleration=False,
         step=50,
         scale=2.5,
         seed=42,
