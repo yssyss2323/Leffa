@@ -23,6 +23,7 @@ class LeffaModel(nn.Module):
         new_in_channels: int = 12,  # noisy_image: 4, mask: 1, masked_image: 4, densepose: 3
         height: int = 1024,
         width: int = 768,
+        dtype: str = "float16",
     ):
         super().__init__()
 
@@ -34,6 +35,9 @@ class LeffaModel(nn.Module):
             pretrained_model,
             new_in_channels,
         )
+
+        if dtype == "float16":
+            self.half()
 
     def build_models(
         self,
@@ -60,14 +64,16 @@ class LeffaModel(nn.Module):
             return_unused_kwargs=True,
         )
         self.vae = AutoencoderKL.from_config(vae_config, **vae_kwargs)
-        self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
+        self.vae_scale_factor = 2 ** (
+            len(self.vae.config.block_out_channels) - 1)
         # Reference UNet
         unet_config, unet_kwargs = ReferenceUNet.load_config(
             pretrained_model_name_or_path,
             subfolder="unet",
             return_unused_kwargs=True,
         )
-        self.unet_encoder = ReferenceUNet.from_config(unet_config, **unet_kwargs)
+        self.unet_encoder = ReferenceUNet.from_config(
+            unet_config, **unet_kwargs)
         self.unet_encoder.config.addition_embed_type = None
         # Generative UNet
         unet_config, unet_kwargs = GenerativeUNet.load_config(
@@ -80,7 +86,8 @@ class LeffaModel(nn.Module):
         # Change Generative UNet conv_in and conv_out
         unet_conv_in_channel_changed = self.unet.config.in_channels != new_in_channels
         if unet_conv_in_channel_changed:
-            self.unet.conv_in = self.replace_conv_in_layer(self.unet, new_in_channels)
+            self.unet.conv_in = self.replace_conv_in_layer(
+                self.unet, new_in_channels)
             self.unet.config.in_channels = new_in_channels
         unet_conv_out_channel_changed = (
             self.unet.config.out_channels != self.vae.config.latent_channels
@@ -114,8 +121,10 @@ class LeffaModel(nn.Module):
 
         # Load pretrained model
         if pretrained_model != "" and pretrained_model is not None:
-            self.load_state_dict(torch.load(pretrained_model, map_location="cpu"))
-            logger.info("Load pretrained model from {}".format(pretrained_model))
+            self.load_state_dict(torch.load(
+                pretrained_model, map_location="cpu"))
+            logger.info(
+                "Load pretrained model from {}".format(pretrained_model))
 
     def replace_conv_in_layer(self, unet_model, new_in_channels):
         original_conv_in = unet_model.conv_in
@@ -168,7 +177,8 @@ class LeffaModel(nn.Module):
         return new_conv_out
 
     def vae_encode(self, pixel_values):
-        pixel_values = pixel_values.to(device=self.vae.device, dtype=self.vae.dtype)
+        pixel_values = pixel_values.to(
+            device=self.vae.device, dtype=self.vae.dtype)
         with torch.no_grad():
             latent = self.vae.encode(pixel_values).latent_dist.sample()
         latent = latent * self.vae.config.scaling_factor
@@ -208,7 +218,8 @@ def remove_cross_attention(
             hidden_size = unet.config.block_out_channels[-1]
         elif name.startswith("up_blocks"):
             block_id = int(name[len("up_blocks.")])
-            hidden_size = list(reversed(unet.config.block_out_channels))[block_id]
+            hidden_size = list(reversed(unet.config.block_out_channels))[
+                block_id]
         elif name.startswith("down_blocks"):
             block_id = int(name[len("down_blocks.")])
             hidden_size = unet.config.block_out_channels[block_id]
@@ -237,7 +248,6 @@ def remove_cross_attention(
     unet.set_attn_processor(attn_procs)
     adapter_modules = torch.nn.ModuleList(unet.attn_processors.values())
     return adapter_modules
-
 
 
 class AttnProcessor2_0(torch.nn.Module):
@@ -315,10 +325,12 @@ class AttnProcessor2_0(torch.nn.Module):
         inner_dim = key.shape[-1]
         head_dim = inner_dim // attn.heads
 
-        query = query.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+        query = query.view(batch_size, -1, attn.heads,
+                           head_dim).transpose(1, 2)
 
         key = key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
-        value = value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+        value = value.view(batch_size, -1, attn.heads,
+                           head_dim).transpose(1, 2)
 
         # the output of sdp = (batch, num_heads, seq_len, head_dim)
         # TODO: add support for attn.scale when we move to Torch 2.1

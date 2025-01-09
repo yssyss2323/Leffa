@@ -106,7 +106,6 @@ class LeffaPipeline(object):
             )
             reference_features = list(reference_features)
 
-
         with tqdm.tqdm(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
                 # expand the latent if we are doing classifier free guidance
