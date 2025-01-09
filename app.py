@@ -251,7 +251,7 @@ if __name__ == "__main__":
                         )
 
                         vt_step = gr.Number(
-                            label="Inference Steps", minimum=30, maximum=100, step=1, value=50)
+                            label="Inference Steps", minimum=30, maximum=100, step=1, value=30)
 
                         vt_scale = gr.Number(
                             label="Guidance Scale", minimum=0.1, maximum=5.0, step=0.1, value=2.5)
@@ -328,7 +328,7 @@ if __name__ == "__main__":
                         )
 
                         pt_step = gr.Number(
-                            label="Inference Steps", minimum=30, maximum=100, step=1, value=50)
+                            label="Inference Steps", minimum=30, maximum=100, step=1, value=30)
 
                         pt_scale = gr.Number(
                             label="Guidance Scale", minimum=0.1, maximum=5.0, step=0.1, value=2.5)
