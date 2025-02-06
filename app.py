@@ -11,11 +11,9 @@ from preprocess.humanparsing.run_parsing import Parsing
 from preprocess.openpose.run_openpose import OpenPose
 
 import gradio as gr
-import os
 
-# Disable Gradio analytics for ephemeral environments
-os.environ["GRADIO_ANALYTICS_ENABLED"] = "false"
-
+# Download checkpoints
+snapshot_download(repo_id="franciszzj/Leffa", local_dir="./ckpts")
 
 class LeffaPredictor(object):
     def __init__(self):
