@@ -100,8 +100,8 @@ def refine_mask(mask):
     return refine_mask
 
 
-def get_agnostic_mask_hd(model_parse, keypoint, category, size=(384, 512)):
-    model_type = "hd"
+def get_agnostic_mask_hd(model_parse, keypoint, category, size=(384, 512), model_type="hd"):
+    # model_type = "hd"
     ##############################
     width, height = size
     im_parse = model_parse.resize((width, height), Image.NEAREST)
@@ -377,3 +377,72 @@ def get_agnostic_mask_dc(model_parse, keypoint, category, size=(384, 512)):
     inpaint_mask = img / 255 * 1
     mask = Image.fromarray(inpaint_mask.astype(np.uint8) * 255)
     return mask
+
+def preprocess_garment_image(input_path, output_path=None, save_image=False):
+    """
+    Preprocess a garment image by cropping to a centered square,
+    resizing, and pasting it onto a 768x1024 white background.
+    """
+    img = Image.open(input_path).convert('RGBA')
+    
+    # Step 1: Get the bounding box of the non-transparent pixels. (the garment)
+    alpha = img.split()[-1]
+    bbox = alpha.getbbox() # (left, upper, right, lower)
+    if bbox is None:
+        raise ValueError("No garment found in the image (the image may be fully transparent).")
+    
+    left, upper, right, lower = bbox
+    bbox_width = right - left
+    bbox_height = lower - upper
+    
+    # Step 2: Create a square crop that centers the garment.
+    square_size = max(bbox_width, bbox_height)
+
+    center_x = left + bbox_width // 2
+    center_y = upper + bbox_height // 2
+
+    new_left = center_x - square_size // 2
+    new_upper = center_y - square_size // 2
+    new_right = new_left + square_size
+    new_lower = new_upper + square_size
+
+    # Adjust the crop if it goes out of the image boundaries.
+    if new_left < 0:
+        new_left = 0
+        new_right = square_size
+    if new_upper < 0:
+        new_upper = 0
+        new_lower = square_size
+    if new_right > img.width:
+        new_right = img.width
+        new_left = img.width - square_size
+    if new_lower > img.height:
+        new_lower = img.height
+        new_upper = img.height - square_size
+
+    # Crop the image to the computed square region.
+    square_crop = img.crop((new_left, new_upper, new_right, new_lower))
+    
+    # Step 3: Resize the square crop.
+    # Here we choose 768x768 so that it will occupy the full width when pasted.
+    garment_resized = square_crop.resize((768, 768), Image.LANCZOS)
+    
+    # Step 4: Create a new white background image of 768x1024.
+    background = Image.new('RGBA', (768, 1024), (255, 255, 255, 255))
+    
+    # Compute where to paste the resized garment so that it is centered.
+    paste_x = 0
+    paste_y = (1024 - 768) // 2
+    
+    # Paste the garment onto the background.
+    background.paste(garment_resized, (paste_x, paste_y), garment_resized)
+    
+    # Optionally, convert to RGB (if you want to save as JPEG) or keep as PNG.
+    final_image = background.convert("RGBA")
+    
+    if save_image:
+        if output_path is None:
+            raise ValueError("output_path must be provided if save_image is True.")
+        final_image.save(output_path, "PNG")
+    
+    return final_image
