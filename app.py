@@ -9,53 +9,78 @@ from leffa_utils.densepose_predictor import DensePosePredictor
 from leffa_utils.utils import resize_and_center, list_dir, get_agnostic_mask_hd, get_agnostic_mask_dc, preprocess_garment_image
 from preprocess.humanparsing.run_parsing import Parsing
 from preprocess.openpose.run_openpose import OpenPose
-
 import gradio as gr
+import time # 시간 측정을 위해 추가
+
+def log_message(message):
+    """로그 메시지를 시간과 함께 출력하는 함수"""
+    print(f"[{time.strftime('%H:%M:%S')}] {message}", flush=True)
 
 # Download checkpoints
+log_message("모델 체크포인트 다운로드를 시작합니다...")
 snapshot_download(repo_id="franciszzj/Leffa", local_dir="./ckpts")
+log_message("모델 체크포인트 다운로드 완료.")
+
 
 class LeffaPredictor(object):
     def __init__(self):
+        log_message("LeffaPredictor 초기화 시작...")
+
+        log_message("AutoMasker 모델 로딩 시작...")
         self.mask_predictor = AutoMasker(
             densepose_path="./ckpts/densepose",
             schp_path="./ckpts/schp",
         )
+        log_message("AutoMasker 모델 로딩 완료.")
 
+        log_message("DensePosePredictor 모델 로딩 시작...")
         self.densepose_predictor = DensePosePredictor(
             config_path="./ckpts/densepose/densepose_rcnn_R_50_FPN_s1x.yaml",
             weights_path="./ckpts/densepose/model_final_162be9.pkl",
         )
+        log_message("DensePosePredictor 모델 로딩 완료.")
 
+        log_message("Parsing 모델 로딩 시작...")
         self.parsing = Parsing(
             atr_path="./ckpts/humanparsing/parsing_atr.onnx",
             lip_path="./ckpts/humanparsing/parsing_lip.onnx",
         )
+        log_message("Parsing 모델 로딩 완료.")
 
+        log_message("OpenPose 모델 로딩 시작...")
         self.openpose = OpenPose(
             body_model_path="./ckpts/openpose/body_pose_model.pth",
         )
+        log_message("OpenPose 모델 로딩 완료.")
 
+        log_message("Virtual Try-on HD 모델 로딩 시작...")
         vt_model_hd = LeffaModel(
             pretrained_model_name_or_path="./ckpts/stable-diffusion-inpainting",
             pretrained_model="./ckpts/virtual_tryon.pth",
             dtype="float16",
         )
         self.vt_inference_hd = LeffaInference(model=vt_model_hd)
+        log_message("Virtual Try-on HD 모델 로딩 완료.")
 
+        log_message("Virtual Try-on DC 모델 로딩 시작...")
         vt_model_dc = LeffaModel(
             pretrained_model_name_or_path="./ckpts/stable-diffusion-inpainting",
             pretrained_model="./ckpts/virtual_tryon_dc.pth",
             dtype="float16",
         )
         self.vt_inference_dc = LeffaInference(model=vt_model_dc)
-
+        log_message("Virtual Try-on DC 모델 로딩 완료.")
+        
+        log_message("Pose Transfer 모델 로딩 시작...")
         pt_model = LeffaModel(
             pretrained_model_name_or_path="./ckpts/stable-diffusion-xl-1.0-inpainting-0.1",
             pretrained_model="./ckpts/pose_transfer.pth",
             dtype="float16",
         )
         self.pt_inference = LeffaInference(model=pt_model)
+        log_message("Pose Transfer 모델 로딩 완료.")
+
+        log_message("모든 모델 로딩 완료. LeffaPredictor 초기화 끝.")
 
     def leffa_predict(
         self,
@@ -156,7 +181,7 @@ class LeffaPredictor(object):
             vt_model_type,
             vt_garment_type,
             vt_repaint,
-            preprocess_garment,  # Pass through the new flag.
+            preprocess_garment,
         )
 
     def leffa_predict_pt(self, src_image_path, ref_image_path, ref_acceleration, step, scale, seed):
@@ -170,9 +195,12 @@ class LeffaPredictor(object):
             seed,
         )
 
-
 if __name__ == "__main__":
+    log_message("메인 프로그램 시작. LeffaPredictor 객체 생성을 시작합니다...")
     leffa_predictor = LeffaPredictor()
+    log_message("LeffaPredictor 객체 생성 완료.")
+
+    log_message("Gradio UI 생성을 시작합니다...")
     example_dir = "./ckpts/examples"
     person1_images = list_dir(f"{example_dir}/person1")
     person2_images = list_dir(f"{example_dir}/person2")
@@ -180,14 +208,14 @@ if __name__ == "__main__":
 
     title = "## Leffa: Learning Flow Fields in Attention for Controllable Person Image Generation"
     link = """[📚 Paper](https://arxiv.org/abs/2412.08486) - [🤖 Code](https://github.com/franciszzj/Leffa) - [🔥 Demo](https://huggingface.co/spaces/franciszzj/Leffa) - [🤗 Model](https://huggingface.co/franciszzj/Leffa)
-           
-           Star ⭐ us if you like it!
-           """
-    news = """## News
-            - 09/Jan/2025. Inference defaults to float16, generating an image in 6 seconds (on A100).
-
-            More news can be found in the [GitHub repository](https://github.com/franciszzj/Leffa).
+            
+            Star ⭐ us if you like it!
             """
+    news = """## News
+             - 09/Jan/2025. Inference defaults to float16, generating an image in 6 seconds (on A100).
+
+             More news can be found in the [GitHub repository](https://github.com/franciszzj/Leffa).
+             """
     description = "Leffa is a unified framework for controllable person image generation that enables precise manipulation of both appearance (i.e., virtual try-on) and pose (i.e., pose transfer)."
     note = "Note: The models used in the demo are trained solely on academic datasets. Virtual try-on uses VITON-HD/DressCode, and pose transfer uses DeepFashion."
 
@@ -223,7 +251,6 @@ if __name__ == "__main__":
                         width=512,
                         height=512,
                     )
-                    # New checkbox to choose preprocessing.
                     preprocess_garment_checkbox = gr.Checkbox(
                         label="Preprocess Garment Image (PNG only)",
                         value=False
@@ -284,17 +311,15 @@ if __name__ == "__main__":
                             width=256,
                             height=256,
                         )
-
-                # Pass the new checkbox value as an extra input.
-                vt_gen_button.click(
-                    fn=leffa_predictor.leffa_predict_vt,
-                    inputs=[
-                        vt_src_image, vt_ref_image, vt_ref_acceleration,
-                        vt_step, vt_scale, vt_seed, vt_model_type,
-                        vt_garment_type, vt_repaint, preprocess_garment_checkbox
-                    ],
-                    outputs=[vt_gen_image, vt_mask, vt_densepose]
-                )
+            vt_gen_button.click(
+                fn=leffa_predictor.leffa_predict_vt,
+                inputs=[
+                    vt_src_image, vt_ref_image, vt_ref_acceleration,
+                    vt_step, vt_scale, vt_seed, vt_model_type,
+                    vt_garment_type, vt_repaint, preprocess_garment_checkbox
+                ],
+                outputs=[vt_gen_image, vt_mask, vt_densepose]
+            )
 
         with gr.Tab("Control Pose (Pose Transfer)"):
             with gr.Row():
@@ -358,11 +383,14 @@ if __name__ == "__main__":
                             width=256,
                             height=256,
                         )
-                pose_transfer_gen_button.click(
-                    fn=leffa_predictor.leffa_predict_pt,
-                    inputs=[pt_src_image, pt_ref_image, pt_ref_acceleration, pt_step, pt_scale, pt_seed],
-                    outputs=[pt_gen_image, pt_mask, pt_densepose]
-                )
+            pose_transfer_gen_button.click(
+                fn=leffa_predictor.leffa_predict_pt,
+                inputs=[pt_src_image, pt_ref_image, pt_ref_acceleration, pt_step, pt_scale, pt_seed],
+                outputs=[pt_gen_image, pt_mask, pt_densepose]
+            )
 
         gr.Markdown(note)
-        demo.launch(share=True, server_port=7860, allowed_paths=["./ckpts/examples"])
+    
+    log_message("Gradio UI 생성 완료. 서버를 시작합니다...")
+    demo.launch(share=True, server_port=7860, allowed_paths=["./ckpts/examples"])
+    log_message("Gradio 서버가 성공적으로 시작되었습니다. 공개 URL을 확인하세요.")
