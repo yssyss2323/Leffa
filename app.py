@@ -17,9 +17,9 @@ def log_message(message):
     print(f"[{time.strftime('%H:%M:%S')}] {message}", flush=True)
 
 # Download checkpoints
-log_message("모델 체크포인트 다운로드를 시작합니다...")
-snapshot_download(repo_id="franciszzj/Leffa", local_dir="./ckpts")
-log_message("모델 체크포인트 다운로드 완료.")
+log_message("모델 체크포인트 확인 중...")
+# snapshot_download(repo_id="franciszzj/Leffa", local_dir="./ckpts") # 드라이브 사용을 위해 이 라인을 주석 처리
+log_message("모델 체크포인트 확인 완료. (드라이브 사용)")
 
 
 class LeffaPredictor(object):
